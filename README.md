@@ -1,6 +1,14 @@
 # CAP Composer Web
 
-Running the Wagtail based CAP Composer as a standalone Wagtail site.
+Running the Wagtail based CAP Composer in a standalone Wagtail site.
+
+This repository contains a sample Docker Compose setup and configuration to include and run
+the [CAP Composer](https://github.com/wmo-raf/cap-composer)
+in a separate standalone Wagtail site, without necessarily including the
+entire [ClimWeb](https://github.com/wmo-raf/nmhs-cms) components.
+
+The [CAP Composer](https://github.com/wmo-raf/cap-composer) is a [Wagtail](https://wagtail.org) based Django package/app
+that provides NMHSs a user-friendly interface for creating and managing CAP alerts.
 
 ## Prerequisites
 
