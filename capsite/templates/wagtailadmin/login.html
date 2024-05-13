@@ -1,0 +1,10 @@
+{% extends "wagtailadmin/login.html" %}
+{% load i18n cms_tags %}
+
+{% block branding_login %}{% trans "Sign in to" %}
+    {% if 'WAGTAIL_SITE_NAME'|django_settings %}
+        {{ 'WAGTAIL_SITE_NAME'|django_settings }}
+    {% else %}
+        {{ site_name }}
+    {% endif %}
+{% endblock %}

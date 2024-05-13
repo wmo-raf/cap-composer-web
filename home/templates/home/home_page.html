@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static i18n wagtailiconchooser_tags %}
+
+{% block body_class %}homepage{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/homepage.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+    <main class="container">
+        <section class="header">
+            <h1 class="title">
+                {% translate "Weather Warnings" %}
+            </h1>
+            <div class="rss-feed">
+                <a href="{% url 'cap_alert_feed' %}">
+                    <span style="margin-right: 4px">CAP RSS</span>
+                    <img src="{% static 'cap/images/cap_symbol.jpeg' %}" alt="CAP Alerts"
+                         style="height: 18px;width: 18px;border-radius:4px">
+                </a>
+            </div>
+        </section>
+        <section>
+            <div class="columns is-multiline is-mobile">
+                <div class="column is-three-fifths-desktop is-full-touch alerts-list">
+                    <div class="alerts-group">
+                        <div class="group-title">
+                            {% translate "Active Alerts" %}
+                        </div>
+
+                        {% if page.alerts_by_expiry.active_alerts %}
+                            {% for alert_info in page.alerts_by_expiry.active_alerts %}
+                                {% include "cap/include_alert_list_item.html" with alert_info=alert_info %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-alerts-state">
+                                <div class="empty-alerts-icon">
+                                    {% svg_icon name="alert" %}
+                                </div>
+                                <div>
+                                    {% translate "No active alerts currently" %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if  page.alerts_by_expiry.past_alerts %}
+                        <div class="alerts-group">
+                            <div class="group-title">
+                                {% translate "Past Alerts" %}
+                            </div>
+                            {% for alert_info in page.alerts_by_expiry.past_alerts %}
+                                {% include "cap/include_alert_list_item.html" with alert_info=alert_info %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+{% endblock content %}

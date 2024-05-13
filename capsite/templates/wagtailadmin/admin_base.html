@@ -1,0 +1,10 @@
+{% extends "wagtailadmin/admin_base.html" %}
+{% load cms_tags %}
+
+{% block branding_title %}
+{% if 'WAGTAIL_SITE_NAME'|django_settings %}
+        {{ 'WAGTAIL_SITE_NAME'|django_settings }}
+    {% else %}
+        {{ site_name }}
+    {% endif %}
+{% endblock %}

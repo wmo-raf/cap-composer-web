@@ -1,0 +1,73 @@
+services:
+  cap_db:
+    container_name: cap_db
+    image: postgis/postgis:15-master
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${CAP_DB_USER}
+      - POSTGRES_DB=${CAP_DB_NAME}
+      - POSTGRES_PASSWORD=${CAP_DB_PASSWORD}
+    ports:
+      - "5432"
+    volumes:
+      - ${CAP_DB_VOLUME}:/var/lib/postgresql/data/
+  cap_web:
+    image: cap_web
+    container_name: cap_web
+    platform: linux/x86_64
+    build:
+      context: .
+      dockerfile: ./docker/capsite/Dockerfile
+    restart: unless-stopped
+    expose:
+      - 8000
+    environment:
+      - WAIT_HOSTS=cap_db:5432
+      - WAIT_TIMEOUT=120
+      - DEBUG=${CAP_DEBUG}
+      - WAGTAIL_SITE_NAME=${CAP_SITE_NAME:-"CAP Composer"}
+      - ADMIN_URL_PATH=${CAP_ADMIN_URL_PATH:-"cap-admin"}
+      - TIME_ZONE=${CAP_TIME_ZONE:-"UTC"}
+      - SECRET_KEY=${CAP_SECRET_KEY}
+      - DATABASE_URL=postgis://${CAP_DB_USER}:${CAP_DB_PASSWORD}@cap_db:5432/${CAP_DB_NAME}
+      - ALLOWED_HOSTS=${CAP_ALLOWED_HOSTS:-"localhost,"}
+      - EMAIL_HOST=${CAP_SMTP_EMAIL_HOST}
+      - EMAIL_PORT=${CAP_SMTP_EMAIL_PORT}
+      - EMAIL_USE_TLS=${CAP_SMTP_EMAIL_USE_TLS}
+      - EMAIL_HOST_USER=${CAP_SMTP_EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${CAP_SMTP_EMAIL_HOST_PASSWORD}
+      - DJANGO_ADMINS=${CAP_ADMINS}
+      - DEFAULT_FROM_EMAIL=${CAP_DEFAULT_FROM_EMAIL}
+      - GUNICORN_NUM_OF_WORKERS=${CAP_GUNICORN_NUM_OF_WORKERS:-4}
+      - GUNICORN_TIMEOUT=${CAP_GUNICORN_TIMEOUT:-300}
+      - CMS_BROKER_URI=mqtt://${CAP_BROKER_USERNAME}:${CAP_BROKER_PASSWORD}@cap_mqtt_broker:1883
+      - CAP_CERT_PATH=${CAP_CERT_PATH:-""}
+      - CAP_PRIVATE_KEY_PATH=${CAP_PRIVATE_KEY_PATH:-""}
+      - CAP_SIGNATURE_METHOD=${CAP_SIGNATURE_METHOD:-"RSA_SHA256"}
+    ports:
+      - "8000"
+    volumes:
+      - ${CAP_STATIC_VOLUME}:/app/static
+      - ${CAP_MEDIA_VOLUME}:/app/media
+      - ${CAP_TLS_VOLUME}:/app/tls:ro
+  cap_nginx:
+    container_name: cap_nginx
+    image: nginx:1.20.2-alpine
+    restart: unless-stopped
+    volumes:
+      - ${CAP_STATIC_VOLUME}:/wagtail_static
+      - ${CAP_MEDIA_VOLUME}:/wagtail_media
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "${CAP_NGINX_PORT:-80}:80"
+  cap_mqtt_broker:
+    container_name: cap_mqtt_broker
+    restart: unless-stopped
+    build:
+      context: ./docker/mqtt_broker
+    environment:
+      - BROKER_USERNAME=${CAP_BROKER_USERNAME}
+      - BROKER_PASSWORD=${CAP_BROKER_PASSWORD}
+      - BROKER_QUEUE_MAX=${CAP_BROKER_QUEUE_MAX}
+    ports:
+      - 1883:1883
