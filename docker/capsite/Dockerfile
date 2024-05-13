@@ -4,8 +4,11 @@
 # pre-installed with GDAL 3.7.0 and Python 3.10.6
 FROM ghcr.io/osgeo/gdal:ubuntu-small-3.7.0
 
+ARG UID=1000
+ARG GID=1000
+
 # Add user that will be used in the container.
-RUN useradd cap
+RUN groupadd --gid "${GID}" cap && useradd --uid "${UID}" --gid "${GID}" cap
 
 # install dependencies
 RUN apt-get update && apt-get install -y \
@@ -45,7 +48,7 @@ COPY docker/capsite/entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 # Set this directory to be owned by the "cap" user
-RUN chown cap:cap /app
+RUN chown -R cap:cap /app
 
 # Copy the source code of the project into the container.
 COPY --chown=cap:cap . .

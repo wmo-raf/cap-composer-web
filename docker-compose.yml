@@ -18,6 +18,9 @@ services:
     build:
       context: .
       dockerfile: ./docker/capsite/Dockerfile
+      args:
+        - UID=${CAP_UID:-1000}
+        - GID=${CAP_GID:-1000}
     restart: unless-stopped
     expose:
       - 8000
