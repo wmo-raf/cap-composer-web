@@ -20,17 +20,19 @@ git clone https://github.com/wmo-raf/cap-composer-web.git
 
 ### 2. Setup environmental variables
 
-Prepare a '.env' file with necessary variables from '.env.sample'.
+Copy the `.env.sample` file to a `.env` file
 
 ```sh
 cp .env.sample .env
 ```
 
+Edit and replace variables appropriately using your text editor. Here is an example using `nano` text editor.
+
 ```sh
 nano .env
 ```
 
-Edit and replace variables appropriately. See [environmental variables' section](#environmental-variables) below
+See [environmental variables' section](#environmental-variables) below for more details on the required variables
 
 ### 3. Build and Run the Docker Containers
 
@@ -183,12 +185,12 @@ button. This will create a draft of the alert that you can edit and publish.
 
 ### 6. Signing CAP Alerts
 
-You can provide a certificate and private key to sign the CAP alerts. These can be put in the `CAP_TLS_VOLUME`
-directory, and named as `cert.pem` and `privkey.pem` respectively. The CAP_TLS_VOLUME directory is mounted to
+You can provide a certificate and private key to sign the CAP XML alerts. These can be put in the `CAP_TLS_VOLUME`
+directory, and named as `cert.pem` and `privkey.pem` respectively. The `CAP_TLS_VOLUME` directory is mounted to
 `/app/tls` inside the container.
 
-Next, update the `CAP_CERT_PATH` and `CAP_PRIVATE_KEY_PATH` environment variables to point to absolute paths of the cert
-and private key files respectively, as accessible inside the container.
+Then you will need to update the `CAP_CERT_PATH` and `CAP_PRIVATE_KEY_PATH` environment variables to point to absolute
+paths of the cert and private key files respectively, as accessible inside the container.
 
 For example, if the cert and private key files are placed on the root of `CAP_TLS_VOLUME` directory, the `CAP_CERT_PATH`
 and `CAP_PRIVATE_KEY_PATH` should be set to `/app/tls/cert.pem` and `/app/tls/privkey.pem` respectively.
