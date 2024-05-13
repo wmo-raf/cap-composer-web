@@ -150,14 +150,15 @@ in the CAP alert message.
 
 This section contains the list of hazard event types that can be used in the CAP alert message. This list should only
 include events monitored by the sending authority. You can select from a list of WMO defined event types or add a new
-custom one as monitored by the sending authority. You can select an icon to represent the event type.
+custom one, as monitored by the sending authority. You can select an icon to represent the event type.
 
 ![Hazard Event Types](docs/images/update_hazard_types.png)
 
 #### Update Audience Types
 
 This section contains the different audience types that can be used in the CAP alert message. You can create as many
-audie types as needed. Usually, you might only need to create one audience type like `General Public` for public alerts.
+audience types as needed. Usually, you might only need to create one audience type like `General Public` for public
+alerts.
 
 ![Audience Types](docs/images/update_audience_types.png)
 
@@ -170,6 +171,9 @@ alert areas using different tools including:
 - Drawing a circle on the map
 - Selecting an area from pre-loaded Administrative Boundaries
 - Selecting an area from a list of predefined areas
+
+`NOTE:` You can find more details on the functionalities and capabilities of the editor in
+the [CAP Composer](https://github.com/wmo-raf/cap-composer) package repository itself.
 
 For an area to be selected from predefined areas, it needs to be created here first and saved. You can use the drawing
 tools here to trace the predefined areas.
