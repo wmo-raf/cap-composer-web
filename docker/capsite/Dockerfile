@@ -7,7 +7,7 @@ FROM ghcr.io/osgeo/gdal:ubuntu-small-3.7.0
 ARG UID=1000
 ARG GID=1000
 
-# Add user that will be used in the container.
+# Add group and user that will be used in the container.
 RUN groupadd --gid "${GID}" cap && useradd --uid "${UID}" --gid "${GID}" cap
 
 # install dependencies

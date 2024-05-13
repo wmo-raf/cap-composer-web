@@ -42,7 +42,32 @@ nano .env
 
 See [environmental variables' section](#environmental-variables) below for more details on the required variables
 
-### 3. Build and Run the Docker Containers
+### 3. Create Wagtail static and media directories on the host machine and set correct permissions
+
+Ensure you are using the correct paths as set in the `.env` file for the `CAP_STATIC_VOLUME` and `CAP_MEDIA_VOLUME`
+variables.
+
+```sh
+mkdir -p ./docker/capsite/static
+```
+
+```sh
+mkdir -p ./docker/capsite/media
+```
+
+#### Update the permissions for the directories
+
+```sh
+sudo chown <CAP_GID>:<CAP_UID> ./docker/capsite/static
+```
+
+```sh
+sudo chown <CAP_GID>:<CAP_UID> ./docker/capsite/media
+```
+
+Replace `<CAP_GID>` and `<CAP_UID>` with the values set in the `.env` file for the `CAP_GID` and `CAP_UID` variables
+
+### 4. Build and Run the Docker Containers
 
 ```sh
 docker-compose build
@@ -58,7 +83,7 @@ To run the containers in the background, use the `-d` flag
 docker-compose up -d
 ```
 
-### 4. Create Superuser
+### 5. Create Superuser
 
 ```sh
 docker-compose exec cap_web python manage.py createsuperuser
@@ -68,6 +93,8 @@ docker-compose exec cap_web python manage.py createsuperuser
 
 | Variable Name                | Description                                                                                                                                                                                                        | Required | Default Value           | Details                                                                                                                                                                             |
 |:-----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|:------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CAP_UID                      | The id of the `cap` user                                                                                                                                                                                           | Yes      | 1000                    |                                                                                                                                                                                     |
+| CAP GID                      | The id of the `cap` group                                                                                                                                                                                          | Yes      | 1000                    |                                                                                                                                                                                     |
 | CAP_DB_USER                  | Postgres Database user                                                                                                                                                                                             | Yes      |                         |                                                                                                                                                                                     |
 | CAP_DB_NAME                  | Postgres Database name                                                                                                                                                                                             | Yes      |                         |                                                                                                                                                                                     |
 | CAP_DB_PASSWORD              | Postgres Database password                                                                                                                                                                                         | Yes      |                         | Avoid using the '@' and '$' or any other special characters without escaping them. If you have to include them, first make sure your password is URL-Encoded to avoid errors        |
@@ -114,7 +141,7 @@ Below is how the admin interface will look when first accessed.
 
 ![Wagtail Admin](docs/images/admin.png)
 
-Login with the superuser credentials created in step 4 above.
+Login with the superuser credentials created in step 5 above.
 
 ### 2. Update Wagtail Site Settings
 
