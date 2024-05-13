@@ -56,10 +56,6 @@ docker-compose up -d
 docker-compose exec cap_web python manage.py createsuperuser
 ```
 
-### 5. Access the Wagtail Admin
-
-The admin interface can be accessed at `http://localhost:{CAP_NGINX_PORT}/{CAP_ADMIN_URL_PATH}`
-
 ## Environmental Variables
 
 | Variable Name                | Description                                                                                                                                                                                                        | Required | Default Value           | Details                                                                                                                                                                             |
@@ -98,10 +94,19 @@ The admin interface can be accessed at `http://localhost:{CAP_NGINX_PORT}/{CAP_A
 
 ### 1. Access the Wagtail Admin
 
-The admin interface can be accessed at `http://localhost:{CAP_NGINX_PORT}/{CAP_ADMIN_URL_PATH}`. Login with the
-superuser credentials created in step 4. Below is how the admin interface will look when first accessed.
+The admin interface can be accessed at `http://<ip_or_domain>:<CAP_NGINX_PORT>/<CAP_ADMIN_URL_PATH>`.
+Replace `<ip_or_domain>` with the IP address or domain name of the site and
+`<CAP_NGINX_PORT>` with the port number where the site is running and `<CAP_ADMIN_URL_PATH>` with the admin URL path as
+set in the environmental variables.
+
+For example, if the site is running on `http://127.0.0.1:8000` and the admin URL path is set to `cap-admin`, the admin
+interface can be accessed at `http://127.0.0.1:8000/cap-admin`.
+
+Below is how the admin interface will look when first accessed.
 
 ![Wagtail Admin](docs/images/admin.png)
+
+Login with the superuser credentials created in step 4 above.
 
 ### 2. Update Wagtail Site Settings
 
