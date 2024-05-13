@@ -20,7 +20,7 @@ git clone https://github.com/wmo-raf/cap-composer-web.git
 
 ### 2. Setup environmental variables
 
-Prepare a '.env' file with necessary variables from '.env.sample'
+Prepare a '.env' file with necessary variables from '.env.sample'.
 
 ```sh
 cp .env.sample .env
@@ -29,6 +29,8 @@ cp .env.sample .env
 ```sh
 nano .env
 ```
+
+Edit and replace variables appropriately. See [environmental variables' section](#environmental-variables) below
 
 ### 3. Build and Run the Docker Containers
 
@@ -58,39 +60,37 @@ The admin interface can be accessed at `http://localhost:{CAP_NGINX_PORT}/{CAP_A
 
 ## Environmental Variables
 
-Edit and replace variables appropriately. See [environmental variables' section](#environmental-variables) below
-
-| Variable Name                | Description                      | Default Value           |
-|:-----------------------------|:---------------------------------|:------------------------|
-| CAP_DB_USER                  | Postgres Database user           |                         |
-| CAP_DB_NAME                  | Postgres Database name           |                         |
-| CAP_DB_PASSWORD              | Postgres Database password       |                         |
-| CAP_DB_VOLUME                | Docker Database volume path      | ./docker/dbdata         |
-| CAP_DEBUG                    | Django Debug mode                | False                   |
-| CAP_SITE_NAME                | Wagtail Site name                | CAP Composer            |
-| CAP_ADMIN_URL_PATH           | Admin URL path                   | cap-admin               |
-| CAP_TIME_ZONE                | Timezone                         | UTC                     |
-| CAP_SECRET_KEY               | Django Secret key                |                         |
-| CAP_ALLOWED_HOSTS            | Django Allowed hosts             | *                       |
-| CAP_SMTP_EMAIL_HOST          | Django SMTP email host           |                         |
-| CAP_SMTP_EMAIL_PORT          | Django SMTP email port           |                         |
-| CAP_SMTP_EMAIL_USE_TLS       | Django SMTP email use TLS        | True                    |
-| CAP_SMTP_EMAIL_HOST_USER     | Django SMTP email host user      |                         |
-| CAP_SMTP_EMAIL_HOST_PASSWORD | Django SMTP email host password  |                         |
-| CAP_ADMINS                   | Django Admin emails              |                         |
-| CAP_DEFAULT_FROM_EMAIL       | Django Default from email        |                         |
-| CAP_STATIC_VOLUME            | Docker Static volume path        | ./docker/capsite/static |
-| CAP_MEDIA_VOLUME             | Docker Media volume path         | ./docker/capsite/media  |
-| CAP_TLS_VOLUME               | Docker CAP TLS volume path       | ./docker/capsite/tls    |
-| CAP_CERT_PATH                | CAP XML Signing Certificate path |                         |
-| CAP_PRIVATE_KEY_PATH         | CAP XML Signing Private key path |                         |
-| CAP_SIGNATURE_METHOD         | CAP XML Signature method         | RSA_SHA256              |
-| CAP_GUNICORN_NUM_OF_WORKERS  | Number of Gunicorn workers       | 4                       |
-| CAP_GUNICORN_TIMEOUT         | Gunicorn timeout                 | 300                     |
-| CAP_NGINX_PORT               | Docker Nginx port                | 80                      |
-| CAP_BROKER_USERNAME          | MQTT Broker username             | cap                     |
-| CAP_BROKER_PASSWORD          | MQTT Broker password             |                         |
-| CAP_BROKER_QUEUE_MAX         | MQTT Broker queue max            | 1000                    |
+| Variable Name                | Description                                                                                                                                                                                                        | Required | Default Value           | Details                                                                                                |
+|:-----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|:------------------------|--------------------------------------------------------------------------------------------------------|
+| CAP_DB_USER                  | Postgres Database user                                                                                                                                                                                             | Yes      |                         |                                                                                                        |
+| CAP_DB_NAME                  | Postgres Database name                                                                                                                                                                                             | Yes      |                         |                                                                                                        |
+| CAP_DB_PASSWORD              | Postgres Database password                                                                                                                                                                                         | Yes      |                         |                                                                                                        |
+| CAP_DB_VOLUME                | Docker Database volume path                                                                                                                                                                                        | Yes      | ./docker/dbdata         |                                                                                                        |
+| CAP_DEBUG                    | Django Debug mode                                                                                                                                                                                                  | No       | False                   |                                                                                                        |
+| CAP_SITE_NAME                | Wagtail Site name                                                                                                                                                                                                  | No       | CAP Composer            |                                                                                                        |
+| CAP_ADMIN_URL_PATH           | Admin URL path                                                                                                                                                                                                     | No       | cap-admin               |                                                                                                        |
+| CAP_TIME_ZONE                | A string representing the time zone for this installation.See the [list of time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Set this to your country timezone.                           | No       | UTC                     | [List of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)         |
+| CAP_SECRET_KEY               | A secret key for a particular Django installation. This is used to provide cryptographic signing, and should be set to a unique, unpredictable value. Django will refuse to start if SECRET_KEY is not set         | Yes      |                         | You can use this online tool [https://djecrety.ir](https://djecrety.ir/) to generate the key and paste |
+| CAP_ALLOWED_HOSTS            | A list of strings representing the host/domain names that this Django site can serve. This is a security measure to prevent HTTP Host header attacks, which are possible even under many seemingly-safe web server | No       | *                       | [Django Allowed Hosts](https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-ALLOWED_HOSTS)  |
+| CAP_SMTP_EMAIL_HOST          | Django SMTP email host. Read more about sending Emails on Django [here](https://docs.djangoproject.com/en/5.0/topics/email)                                                                                        | No       |                         |                                                                                                        |
+| CAP_SMTP_EMAIL_PORT          | Django SMTP email port                                                                                                                                                                                             | No       |                         |                                                                                                        |
+| CAP_SMTP_EMAIL_USE_TLS       | Django SMTP email use TLS                                                                                                                                                                                          | No       | True                    |                                                                                                        |
+| CAP_SMTP_EMAIL_HOST_USER     | Django SMTP email host user                                                                                                                                                                                        | No       |                         |                                                                                                        |
+| CAP_SMTP_EMAIL_HOST_PASSWORD | Django SMTP email host password                                                                                                                                                                                    | No       |                         |                                                                                                        |
+| CAP_ADMINS                   | Django Admin emails                                                                                                                                                                                                | No       |                         |                                                                                                        |
+| CAP_DEFAULT_FROM_EMAIL       | Django Default from email                                                                                                                                                                                          | No       |                         |                                                                                                        |
+| CAP_STATIC_VOLUME            | Docker Static volume path                                                                                                                                                                                          | Yes      | ./docker/capsite/static |                                                                                                        |
+| CAP_MEDIA_VOLUME             | Docker Media volume path                                                                                                                                                                                           | Yes      | ./docker/capsite/media  |                                                                                                        |
+| CAP_TLS_VOLUME               | Docker CAP TLS volume path                                                                                                                                                                                         | No       | ./docker/capsite/tls    |                                                                                                        |
+| CAP_CERT_PATH                | CAP XML Signing Certificate path                                                                                                                                                                                   | No       |                         |                                                                                                        |
+| CAP_PRIVATE_KEY_PATH         | CAP XML Signing Private key path                                                                                                                                                                                   | No       |                         |                                                                                                        |
+| CAP_SIGNATURE_METHOD         | CAP XML Signature method                                                                                                                                                                                           | No       | RSA_SHA256              |                                                                                                        |
+| CAP_GUNICORN_NUM_OF_WORKERS  | Number of Gunicorn workers                                                                                                                                                                                         | No       | 4                       |                                                                                                        |
+| CAP_GUNICORN_TIMEOUT         | Gunicorn timeout                                                                                                                                                                                                   | No       | 300                     |                                                                                                        |
+| CAP_NGINX_PORT               | Docker Nginx port                                                                                                                                                                                                  | Yes      | 80                      |                                                                                                        |
+| CAP_BROKER_USERNAME          | MQTT Broker username                                                                                                                                                                                               | Yes      | cap                     |                                                                                                        |
+| CAP_BROKER_PASSWORD          | MQTT Broker password                                                                                                                                                                                               | Yes      |                         |                                                                                                        |
+| CAP_BROKER_QUEUE_MAX         | MQTT Broker queue max                                                                                                                                                                                              | Yes      | 1000                    |                                                                                                        |
 
 ## Admin Interface
 
@@ -180,4 +180,27 @@ After loading and previewing the CAP alert, you can create a draft of the alert 
 button. This will create a draft of the alert that you can edit and publish.
 
 ![Import CAP Alert](docs/images/creat_draft_from_import_alert.png)
+
+### 6. Signing CAP Alerts
+
+You can provide a certificate and private key to sign the CAP alerts. These can be put in the `CAP_TLS_VOLUME`
+directory, and named as `cert.pem` and `privkey.pem` respectively. The CAP_TLS_VOLUME directory is mounted to
+`/app/tls` inside the container.
+
+Next, update the `CAP_CERT_PATH` and `CAP_PRIVATE_KEY_PATH` environment variables to point to absolute paths of the cert
+and private key files respectively, as accessible inside the container.
+
+For example, if the cert and private key files are placed on the root of `CAP_TLS_VOLUME` directory, the `CAP_CERT_PATH`
+and `CAP_PRIVATE_KEY_PATH` should be set to `/app/tls/cert.pem` and `/app/tls/privkey.pem` respectively.
+
+If you do not have a certificate and private key, you can generate a self-signed certificate and private key using the
+following commands, and place them in the `CAP_TLS_VOLUME` directory.
+
+```bash
+openssl req -x509 -nodes -subj "/CN=<ip-or-domain>" -days 365 -newkey rsa -keyout privkey.pem -out cert.pem 
+```
+
+`NOTE:` Make sure to replace `<ip-or-domain>` with the IP address or domain name of the site.
+
+
 
