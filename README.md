@@ -20,6 +20,14 @@ Before following the steps below, make sure you have the following set up:
 
 ## Installation
 
+___
+
+**Warning for Windows users:** To avoid any installation issues, ensure that your default line endings are set to **LF** in your IDE.
+
+For example, in VS Code you should ensure that the bottom right says 'LF' and *not* 'CRLF'. If you continue to run into problems, you may consider modifying how Git handles line ending conversion as well (see the `core.autocrlf` section of [this page](https://git-scm.com/book/en/v2/Customizing-Git-Git-Configuration) for more information).
+
+___
+
 ### 1. Clone the Repository
 
 ```sh
@@ -56,6 +64,7 @@ mkdir -p ./docker/capsite/media
 ```
 
 #### Update the permissions for the directories
+*Note: This step is not necessary on Windows machines.*
 
 ```sh
 sudo chown <CAP_GID>:<CAP_UID> ./docker/capsite/static
