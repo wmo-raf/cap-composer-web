@@ -1,11 +1,14 @@
 from capeditor.models import CapAlertPageForm, AbstractCapAlertPage
 from capeditor.pubsub.publish import publish_cap_mqtt_message
+from django.db import models
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
 from wagtail import blocks
 from wagtail.models import Page
 from wagtail.signals import page_published
+
+from cap.utils import get_cap_settings, format_date_to_oid
 
 
 class CapPageForm(CapAlertPageForm):
@@ -52,6 +55,16 @@ class CapPageForm(CapAlertPageForm):
 
         return cleaned_data
 
+    def save(self, commit=True):
+        if self.instance.info:
+            # set the expires field to the value of the expires date in the info field
+            info = self.instance.info[0]
+            expires = info.value.get("expires")
+            if expires:
+                self.instance.expires = expires
+
+        return super().save(commit=commit)
+
 
 class CapAlertPage(AbstractCapAlertPage):
     base_form_class = CapPageForm
@@ -61,12 +74,15 @@ class CapAlertPage(AbstractCapAlertPage):
     parent_page_types = ["home.HomePage"]
     subpage_types = []
 
+    expires = models.DateTimeField(blank=True, null=True)
+
     content_panels = Page.content_panels + [
         *AbstractCapAlertPage.content_panels
     ]
 
     class Meta:
         ordering = ["-sent"]
+        verbose_name = _("CAP Alert")
 
     @property
     def display_title(self):
@@ -79,6 +95,22 @@ class CapAlertPage(AbstractCapAlertPage):
 
     def get_admin_display_title(self):
         return self.display_title
+
+    @property
+    def identifier(self):
+        identifier = self.guid
+        try:
+            cap_settings = get_cap_settings()
+            wmo_oid = cap_settings.wmo_oid
+
+            if wmo_oid:
+                date_oid = format_date_to_oid(self.sent)
+                identifier = f"urn:oid:{wmo_oid}.{date_oid}"
+
+        except Exception as e:
+            pass
+
+        return identifier
 
     @cached_property
     def xml_link(self):
@@ -117,3 +149,7 @@ def on_publish_cap_alert(sender, **kwargs):
 
 
 page_published.connect(on_publish_cap_alert, sender=CapAlertPage)
+
+
+def get_all_published_alerts():
+    return CapAlertPage.objects.all().live().filter(status="Actual", scope="Public").order_by('-sent')

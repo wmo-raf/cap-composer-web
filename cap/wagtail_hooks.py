@@ -16,7 +16,7 @@ from wagtail.admin.forms.pages import CopyForm
 from wagtail.admin.menu import MenuItem
 from wagtail.blocks import StreamValue
 from wagtail.models import Page
-from wagtail_modeladmin.helpers import AdminURLHelper
+from wagtail_modeladmin.helpers import AdminURLHelper, PagePermissionHelper, PageButtonHelper
 from wagtail_modeladmin.options import (
     ModelAdmin,
     modeladmin_register,
@@ -29,6 +29,52 @@ from .models import (
 )
 
 
+class CAPPagePermissionHelper(PagePermissionHelper):
+    def user_can_edit_obj(self, user, obj):
+        can_edit = super().user_can_edit_obj(user, obj)
+
+        if obj.live and obj.status == "Actual":
+            return False
+
+        return can_edit
+
+    def user_can_delete_obj(self, user, obj):
+        can_delete = super().user_can_delete_obj(user, obj)
+
+        if obj.live and obj.status == "Actual":
+            return False
+
+        return can_delete
+
+    def user_can_unpublish_obj(self, user, obj):
+        can_unpublish = super().user_can_unpublish_obj(user, obj)
+
+        if obj.live and obj.status == "Actual":
+            return False
+
+        return can_unpublish
+
+
+class CAPAlertPageButtonHelper(PageButtonHelper):
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
+        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+
+        classnames = self.edit_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+
+        if obj.live:
+            live_button = {
+                "url": obj.get_full_url(),
+                "label": _("LIVE"),
+                "classname": cn,
+                "title": _("Visit the live page")
+            }
+
+            buttons = [live_button] + buttons
+
+        return buttons
+
+
 class CAPAdmin(ModelAdmin):
     model = CapAlertPage
     menu_label = _('Alerts')
@@ -36,6 +82,8 @@ class CAPAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
+    permission_helper_class = CAPPagePermissionHelper
+    button_helper_class = CAPAlertPageButtonHelper
 
 
 class CAPMenuGroup(ModelAdminGroup):

@@ -22,9 +22,12 @@ Before following the steps below, make sure you have the following set up:
 
 ___
 
-**Warning for Windows users:** To avoid any installation issues, ensure that your default line endings are set to **LF** in your IDE.
+**Warning for Windows users:** To avoid any installation issues, ensure that your default line endings are set to **LF**
+in your IDE.
 
-For example, in VS Code you should ensure that the bottom right says 'LF' and *not* 'CRLF'. If you continue to run into problems, you may consider modifying how Git handles line ending conversion as well (see the `core.autocrlf` section of [this page](https://git-scm.com/book/en/v2/Customizing-Git-Git-Configuration) for more information).
+For example, in VS Code you should ensure that the bottom right says 'LF' and *not* 'CRLF'. If you continue to run into
+problems, you may consider modifying how Git handles line ending conversion as well (see the `core.autocrlf` section
+of [this page](https://git-scm.com/book/en/v2/Customizing-Git-Git-Configuration) for more information).
 
 ___
 
@@ -64,6 +67,7 @@ mkdir -p ./docker/capsite/media
 ```
 
 #### Update the permissions for the directories
+
 *Note: This step is not necessary on Windows machines.*
 
 ```sh
@@ -181,6 +185,12 @@ This section contains the details of the CAP sender. The details are used to pop
 in the CAP alert message.
 
 ![CAP Sender Details](docs/images/update_sender_details.png)
+
+For the `WMO Register of Alerting Authorities OID`, you go to
+the [WMO Register of Alerting Authorities](https://alertingauthority.wmo.int/) site and select your country, then copy
+the OID numbers as indicated in the example image below for Kenya Meteorological Service¬.
+
+![WMO Register of Alerting Authorities](docs/images/get_wmo_oid.png)
 
 #### Update Hazard Event Types
 
