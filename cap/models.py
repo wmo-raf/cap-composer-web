@@ -23,7 +23,8 @@ class CapPageForm(CapAlertPageForm):
             for block_type, block in references_field.block.child_blocks.items():
                 if block_type == "reference":
                     field_name = "ref_alert"
-                    ref_alert_block = references_field.block.child_blocks[block_type].child_blocks[field_name]
+                    ref_alert_block = references_field.block.child_blocks[
+                        block_type].child_blocks[field_name]
 
                     label = ref_alert_block.label or field_name
                     name = ref_alert_block.name
@@ -48,10 +49,12 @@ class CapPageForm(CapAlertPageForm):
                 expires = info.value.get("expires")
 
                 if effective and sent and effective < sent:
-                    self.add_error('info', _("Effective date cannot be earlier than the alert sent date."))
+                    self.add_error(
+                        'info', _("Effective date cannot be earlier than the alert sent date."))
 
                 if expires and sent and expires < sent:
-                    self.add_error('info', _("Expires date cannot be earlier than the alert sent date."))
+                    self.add_error(
+                        'info', _("Expires date cannot be earlier than the alert sent date."))
 
         return cleaned_data
 
@@ -133,6 +136,44 @@ class CapAlertPage(AbstractCapAlertPage):
             alerts = sorted(alerts, key=lambda x: x.sent)
 
         return alerts
+
+
+class CAPAlertMQTT(models.Model):
+    username = models.CharField(max_length=255,
+                                verbose_name=_("Broker Username"))
+    password = models.CharField(max_length=255,
+                                verbose_name=_("Broker Password"))
+    host = models.CharField(max_length=255,
+                            verbose_name=_("Broker Host"))
+    port = models.CharField(max_length=255,
+                            verbose_name=_("Broker Port"))
+    channel = models.CharField(max_length=255,
+                               verbose_name=_("Channel"))
+    topic = models.CharField(max_length=255,
+                             verbose_name=_("Topic"))
+    active = models.BooleanField(default=True, verbose_name=_("Active"))
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    retry_on_failure = models.BooleanField(
+        default=True, verbose_name=_("Retry on failure"))
+
+    panels = [
+        FieldPanel("username"),
+        FieldPanel("password"),
+        FieldPanel("host"),
+        FieldPanel("port"),
+        FieldPanel("channel"),
+        FieldPanel("topic"),
+        FieldPanel("active"),
+    ]
+
+    class Meta:
+        ordering = ["-sent"]
+        verbose_name = _("CAP Alert MQTT")
+        verbose_name_plural = _("CAP Alert MQTTs")
+
+    def __str__(self):
+        return f"{self.alert} - {self.topic}"
 
 
 def on_publish_cap_alert(sender, **kwargs):
