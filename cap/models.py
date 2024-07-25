@@ -2,6 +2,7 @@ from capeditor.models import CapAlertPageForm, AbstractCapAlertPage
 from capeditor.pubsub.publish import publish_cap_mqtt_message
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
 from wagtail import blocks
@@ -138,15 +139,15 @@ class CapAlertPage(AbstractCapAlertPage):
         return alerts
 
 
-class CAPAlertMQTT(models.Model):
-    username = models.CharField(max_length=255,
-                                verbose_name=_("Broker Username"))
-    password = models.CharField(max_length=255,
-                                verbose_name=_("Broker Password"))
+class CAPAlertMQTTBroker(models.Model):
     host = models.CharField(max_length=255,
                             verbose_name=_("Broker Host"))
     port = models.CharField(max_length=255,
                             verbose_name=_("Broker Port"))
+    username = models.CharField(max_length=255,
+                                verbose_name=_("Broker Username"))
+    password = models.CharField(max_length=255,
+                                verbose_name=_("Broker Password"))
     channel = models.CharField(max_length=255,
                                verbose_name=_("Channel"))
     topic = models.CharField(max_length=255,
@@ -158,10 +159,10 @@ class CAPAlertMQTT(models.Model):
         default=True, verbose_name=_("Retry on failure"))
 
     panels = [
-        FieldPanel("username"),
-        FieldPanel("password"),
         FieldPanel("host"),
         FieldPanel("port"),
+        FieldPanel("username"),
+        FieldPanel("password"),
         FieldPanel("channel"),
         FieldPanel("topic"),
         FieldPanel("active"),
@@ -169,28 +170,70 @@ class CAPAlertMQTT(models.Model):
 
     class Meta:
         ordering = ["-sent"]
-        verbose_name = _("CAP Alert MQTT")
-        verbose_name_plural = _("CAP Alert MQTTs")
+        verbose_name = _("CAP Alert MQTT Broker")
+        verbose_name_plural = _("CAP Alert MQTT Brokers")
 
     def __str__(self):
         return f"{self.alert} - {self.topic}"
 
 
+MQTT_STATES = [
+    ("PENDING", _("Pending")),
+    ("FAILURE", _("Failure")),
+    ("SUCCESS", _("Success")),
+]
+
+
+class CAPAlertMQTTBrokerEvent(models.Model):
+    broker = models.ForeignKey(
+        CAPAlertMQTTBroker, on_delete=models.CASCADE, related_name="events")
+    alert = models.ForeignKey(
+        CapAlertPage, on_delete=models.CASCADE,
+        related_name="mqtt_broker_events")
+    status = models.CharField(max_length=40, choices=MQTT_STATES,
+                              default="PENDING", verbose_name=_("Status"),
+                              editable=False)
+    retries = models.IntegerField(default=0, verbose_name=_("Retries"))
+    error = models.TextField(blank=True, null=True,
+                             verbose_name=_("Last Error Message"))
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("CAP Alert MQTT Broker Event")
+        verbose_name_plural = _("CAP Alert MQTT Broker Events")
+
+    def __str__(self):
+        return f"{self.broker.name} - {self.alert.title}"
+
+
 def on_publish_cap_alert(sender, **kwargs):
+    # TODO: Finish logic here
     instance = kwargs['instance']
 
-    # Catch and ignore any exceptions that may occur
-    # We don't want to stop the alert publishing process if an exception occurs
-    try:
-        # publish to mqtt
-        topic = "cap/alerts/all"
-        publish_cap_mqtt_message(instance, topic)
-    except Exception as e:
-        pass
+    if instance.status == "Actual" and instance.scope == "Public":
+        # Catch and ignore any exceptions that may occur
+        # We don't want to stop the alert publishing process
+        # if an exception occurs
+        try:
+            # publish to mqtt
+            topic = "data/core/weather/advisories-warnings"
+            publish_cap_mqtt_message(instance, topic)
+        except Exception:
+            pass
 
 
 page_published.connect(on_publish_cap_alert, sender=CapAlertPage)
 
 
 def get_all_published_alerts():
-    return CapAlertPage.objects.all().live().filter(status="Actual", scope="Public").order_by('-sent')
+    return CapAlertPage.objects.all().live().filter(
+        status="Actual", scope="Public").order_by('-sent')
+
+
+def get_currently_active_alerts():
+    current_time = timezone.localtime()
+    return get_all_published_alerts().filter(expires__gte=current_time)
+
+
+page_published.connect(on_publish_cap_alert, sender=CapAlertPage)

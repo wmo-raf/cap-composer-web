@@ -26,6 +26,8 @@ from wagtail_modeladmin.options import (
 from home.models import HomePage
 from .models import (
     CapAlertPage,
+    CAPAlertMQTTBroker,
+    CAPAlertMQTTBrokerEvent
 )
 
 
@@ -57,7 +59,8 @@ class CAPPagePermissionHelper(PagePermissionHelper):
 
 class CAPAlertPageButtonHelper(PageButtonHelper):
     def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
-        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+        buttons = super().get_buttons_for_obj(
+            obj, exclude, classnames_add, classnames_exclude)
 
         classnames = self.edit_button_classnames + classnames_add
         cn = self.finalise_classname(classnames, classnames_exclude)
@@ -86,6 +89,42 @@ class CAPAdmin(ModelAdmin):
     button_helper_class = CAPAlertPageButtonHelper
 
 
+class CAPAlertMQTTAdmin(ModelAdmin):
+    model = CAPAlertMQTTBroker
+    menu_label = _('MQTT Brokers')
+    menu_icon = 'multi-cluster-sector'
+
+
+class CAPAlertMQTTEventPermissionHelper(PermissionHelper):
+    def user_can_create(self, user):
+        return False
+
+    def user_can_edit_obj(self, user, obj):
+        return False
+
+    def user_can_delete_obj(self, user, obj):
+        return False
+
+    def user_can_copy_obj(self, user, obj):
+        return False
+
+
+class CAPAlertMQTTEventAdmin(ModelAdmin):
+    model = CAPAlertMQTTBrokerEvent
+    menu_label = _('MQTT Brokers')
+    menu_icon = 'notification'
+    list_display = ('mqtt', 'alert', 'created', 'status')
+    list_filter = ('status', 'mqtt')
+    inspect_view_enabled = True
+
+    permission_helper_class = CAPAlertMQTTEventPermissionHelper
+
+
+class CAPMenuGroupAdminMenuItem(GroupMenuItem):
+    def is_shown(self, request):
+        return request.user.has_perm("base.can_view_alerts_menu")
+
+
 class CAPMenuGroup(ModelAdminGroup):
     menu_label = _('CAP Alerts')
     menu_icon = 'warning'  # change as required
@@ -104,15 +143,18 @@ class CAPMenuGroup(ModelAdminGroup):
 
             # add CAP import menu
             settings_url = reverse("load_cap_alert")
-            import_cap_menu = MenuItem(label=_("Import CAP Alert"), url=settings_url, icon_name="upload")
+            import_cap_menu = MenuItem(
+                label=_("Import CAP Alert"), url=settings_url, icon_name="upload")
             menu_items.append(import_cap_menu)
 
             # add settings menu
             settings_url = reverse(
                 "wagtailsettings:edit",
-                args=[CapSetting._meta.app_label, CapSetting._meta.model_name, ],
+                args=[CapSetting._meta.app_label,
+                      CapSetting._meta.model_name, ],
             )
-            gm_settings_menu = MenuItem(label=_("CAP Base Settings"), url=settings_url, icon_name="cog")
+            gm_settings_menu = MenuItem(
+                label=_("CAP Base Settings"), url=settings_url, icon_name="cog")
             menu_items.append(gm_settings_menu)
         except Exception:
             pass
@@ -126,7 +168,8 @@ modeladmin_register(CAPMenuGroup)
 @hooks.register('construct_settings_menu')
 def hide_settings_menu_item(request, menu_items):
     hidden_settings = ["cap-settings"]
-    menu_items[:] = [item for item in menu_items if item.name not in hidden_settings]
+    menu_items[:] = [
+        item for item in menu_items if item.name not in hidden_settings]
 
 
 @hooks.register("before_copy_page")
@@ -136,7 +179,8 @@ def copy_cap_alert_page(request, page):
         parent_page = page.get_parent()
 
         # Check if the user has permission to publish subpages on the parent
-        can_publish = parent_page.permissions_for_user(request.user).can_publish_subpage()
+        can_publish = parent_page.permissions_for_user(
+            request.user).can_publish_subpage()
 
         # Create the form
         form = CopyForm(
@@ -220,7 +264,8 @@ def before_unpublish_cap_alert_page(request, page):
     if page.__class__.__name__ == "CapAlertPage":
         if page.live and page.status == "Actual":
             url = AdminURLHelper(page).get_action_url("index")
-            messages.warning(request, gettext("Actual Alerts cannot be Unpublished after they have been published"))
+            messages.warning(request, gettext(
+                "Actual Alerts cannot be Unpublished after they have been published"))
             return redirect(url)
 
 
@@ -279,7 +324,8 @@ def import_cap_alert(request, alert_data):
             if "event" in info:
                 event = info["event"]
 
-                existing_hazard_event_type = hazard_event_types.filter(event__iexact=event).first()
+                existing_hazard_event_type = hazard_event_types.filter(
+                    event__iexact=event).first()
                 if existing_hazard_event_type:
                     info_base_data["event"] = existing_hazard_event_type.event
                 else:
@@ -304,12 +350,15 @@ def import_cap_alert(request, alert_data):
                 event_codes = info["eventCode"]
                 event_code_data = []
                 for event_code in event_codes:
-                    event_code_data.append({"valueName": event_code["valueName"], "value": event_code["value"]})
+                    event_code_data.append(
+                        {"valueName": event_code["valueName"], "value": event_code["value"]})
                 info_base_data["eventCode"] = event_code_data
             if "effective" in info:
                 effective = info["effective"]
-                effective = datetime.fromisoformat(effective).astimezone(pytz.utc)
-                effective_local = effective.astimezone(timezone.get_current_timezone())
+                effective = datetime.fromisoformat(
+                    effective).astimezone(pytz.utc)
+                effective_local = effective.astimezone(
+                    timezone.get_current_timezone())
                 info_base_data["effective"] = effective_local
             if "onset" in info:
                 onset = info["onset"]
@@ -319,7 +368,8 @@ def import_cap_alert(request, alert_data):
             if "expires" in info:
                 expires = info["expires"]
                 expires = datetime.fromisoformat(expires).astimezone(pytz.utc)
-                expires_local = expires.astimezone(timezone.get_current_timezone())
+                expires_local = expires.astimezone(
+                    timezone.get_current_timezone())
                 info_base_data["expires"] = expires_local
             if "senderName" in info:
                 info_base_data["senderName"] = info["senderName"]
@@ -336,14 +386,16 @@ def import_cap_alert(request, alert_data):
                 contact = info["contact"]
                 contact_list = get_cap_contact_list(request)
                 if contact not in contact_list:
-                    cap_settings.contacts.append(("contact", {"contact": contact}))
+                    cap_settings.contacts.append(
+                        ("contact", {"contact": contact}))
                     cap_settings.save()
                 info_base_data["contact"] = contact
             if "audience" in info:
                 audience = info["audience"]
                 audience_list = get_cap_audience_list(request)
                 if audience not in audience_list:
-                    cap_settings.audience_types.append(("audience_type", {"audience": audience}))
+                    cap_settings.audience_types.append(
+                        ("audience_type", {"audience": audience}))
                     cap_settings.save()
                 info_base_data["audience"] = audience
 
@@ -351,7 +403,8 @@ def import_cap_alert(request, alert_data):
                 parameters = info["parameter"]
                 parameter_data = []
                 for parameter in parameters:
-                    parameter_data.append({"valueName": parameter["valueName"], "value": parameter["value"]})
+                    parameter_data.append(
+                        {"valueName": parameter["valueName"], "value": parameter["value"]})
                 info_base_data["parameter"] = parameter_data
             if "resource" in info:
                 resources = info["resource"]
@@ -422,7 +475,8 @@ def import_cap_alert(request, alert_data):
     if title:
         base_data["title"] = title
         new_cap_alert_page = CapAlertPage(**base_data, live=False)
-        new_cap_alert_page.info = StreamValue(new_cap_alert_page.info.stream_block, info_blocks, is_lazy=True)
+        new_cap_alert_page.info = StreamValue(
+            new_cap_alert_page.info.stream_block, info_blocks, is_lazy=True)
 
         cap_list_page = HomePage.objects.live().first()
 
@@ -430,7 +484,8 @@ def import_cap_alert(request, alert_data):
             cap_list_page.add_child(instance=new_cap_alert_page)
             cap_list_page.save_revision()
 
-            messages.success(request, gettext("CAP Alert draft created. You can now edit the alert."))
+            messages.success(request, gettext(
+                "CAP Alert draft created. You can now edit the alert."))
 
             return redirect(reverse("wagtailadmin_pages:edit", args=[new_cap_alert_page.id]))
 
