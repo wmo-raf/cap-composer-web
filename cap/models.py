@@ -1,5 +1,4 @@
 from capeditor.models import CapAlertPageForm, AbstractCapAlertPage
-from capeditor.pubsub.publish import publish_cap_mqtt_message
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -8,8 +7,10 @@ from django.utils.translation import gettext as _
 from wagtail import blocks
 from wagtail.models import Page
 from wagtail.signals import page_published
+from wagtail.admin.panels import FieldPanel
 
 from cap.utils import get_cap_settings, format_date_to_oid
+from cap.tasks import publish_cap_mqtt_message
 
 
 class CapPageForm(CapAlertPageForm):
@@ -111,7 +112,7 @@ class CapAlertPage(AbstractCapAlertPage):
                 date_oid = format_date_to_oid(self.sent)
                 identifier = f"urn:oid:{wmo_oid}.{date_oid}"
 
-        except Exception as e:
+        except Exception:
             pass
 
         return identifier
@@ -140,6 +141,8 @@ class CapAlertPage(AbstractCapAlertPage):
 
 
 class CAPAlertMQTTBroker(models.Model):
+    name = models.CharField(max_length=255,
+                            verbose_name=_("Name"))
     host = models.CharField(max_length=255,
                             verbose_name=_("Broker Host"))
     port = models.CharField(max_length=255,
@@ -148,10 +151,13 @@ class CAPAlertMQTTBroker(models.Model):
                                 verbose_name=_("Broker Username"))
     password = models.CharField(max_length=255,
                                 verbose_name=_("Broker Password"))
-    channel = models.CharField(max_length=255,
-                               verbose_name=_("Channel"))
-    topic = models.CharField(max_length=255,
-                             verbose_name=_("Topic"))
+    centre_id = models.CharField(max_length=255,
+                                 verbose_name=_("Centre ID"))
+    is_recommended = models.BooleanField(
+        default=False, verbose_name=_("Is Recommended"))
+    internal_topic = models.CharField(
+        max_length=255, default="wis2box/cap/publication",
+        verbose_name=_("Internal Topic"))
     active = models.BooleanField(default=True, verbose_name=_("Active"))
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -163,8 +169,8 @@ class CAPAlertMQTTBroker(models.Model):
         FieldPanel("port"),
         FieldPanel("username"),
         FieldPanel("password"),
-        FieldPanel("channel"),
-        FieldPanel("topic"),
+        FieldPanel("centre_id"),
+        FieldPanel("is_recommended"),
         FieldPanel("active"),
     ]
 
@@ -174,7 +180,7 @@ class CAPAlertMQTTBroker(models.Model):
         verbose_name_plural = _("CAP Alert MQTT Brokers")
 
     def __str__(self):
-        return f"{self.alert} - {self.topic}"
+        return f"{self.name} - {self.host}:{self.port}"
 
 
 MQTT_STATES = [
@@ -208,22 +214,13 @@ class CAPAlertMQTTBrokerEvent(models.Model):
 
 
 def on_publish_cap_alert(sender, **kwargs):
-    # TODO: Finish logic here
     instance = kwargs['instance']
 
-    if instance.status == "Actual" and instance.scope == "Public":
-        # Catch and ignore any exceptions that may occur
-        # We don't want to stop the alert publishing process
-        # if an exception occurs
+    if instance.status == "Actual":
         try:
-            # publish to mqtt
-            topic = "data/core/weather/advisories-warnings"
-            publish_cap_mqtt_message(instance, topic)
+            publish_cap_mqtt_message(instance)
         except Exception:
             pass
-
-
-page_published.connect(on_publish_cap_alert, sender=CapAlertPage)
 
 
 def get_all_published_alerts():

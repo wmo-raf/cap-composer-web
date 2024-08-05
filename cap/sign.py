@@ -4,7 +4,8 @@ from signxml import XMLSigner, SignatureMethod
 
 cap_cert_path = getattr(settings, "CAP_CERT_PATH", "")
 cap_private_key_path = getattr(settings, "CAP_PRIVATE_KEY_PATH", "")
-cap_signature_method = getattr(settings, "CAP_SIGNATURE_METHOD", SignatureMethod.RSA_SHA256)
+cap_signature_method = getattr(
+    settings, "CAP_SIGNATURE_METHOD", SignatureMethod.RSA_SHA256)
 
 
 def sign_xml(xml_string):
@@ -18,5 +19,7 @@ def sign_xml(xml_string):
         cert = cert_file.read()
 
     root = etree.fromstring(xml_string)
-    signed_root = XMLSigner(signature_algorithm=cap_signature_method).sign(root, key=key, cert=cert)
+    signed_root = XMLSigner(signature_algorithm=cap_signature_method).sign(
+        root, key=key, cert=cert
+    )
     return etree.tostring(signed_root)
