@@ -1,13 +1,17 @@
 from capeditor.models import CapAlertPageForm, AbstractCapAlertPage
 from django.db import models
 from django.urls import reverse
+from django.forms import PasswordInput
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
 from wagtail import blocks
 from wagtail.models import Page
 from wagtail.signals import page_published
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from cryptography.fernet import Fernet
+import os
+from base64 import b64encode, b64decode
 
 from cap.utils import get_cap_settings, format_date_to_oid
 from cap.tasks import publish_cap_mqtt_message
@@ -140,44 +144,98 @@ class CapAlertPage(AbstractCapAlertPage):
         return alerts
 
 
+# Generate a key for encrypting the MQTT broker password
+# This should be done once and stored securely
+key = os.getenv('CAP_FERNET_KEY')
+if key is None:
+    raise ValueError("CAP_FERNET_KEY environment variable not set")
+cipher_suite = Fernet(key)
+
+
 class CAPAlertMQTTBroker(models.Model):
     name = models.CharField(max_length=255,
-                            verbose_name=_("Name"))
+                            verbose_name=_("Name"),
+                            help_text=_("Provide a name to identify the broker"))
     host = models.CharField(max_length=255,
-                            verbose_name=_("Broker Host"))
+                            verbose_name=_("Broker Host"),
+                            help_text=_("Provide the broker host name or IP address"))
     port = models.CharField(max_length=255,
-                            verbose_name=_("Broker Port"))
+                            verbose_name=_("Broker Port"),
+                            help_text=_("Provide the broker port number"))
     username = models.CharField(max_length=255,
                                 verbose_name=_("Broker Username"))
-    password = models.CharField(max_length=255,
-                                verbose_name=_("Broker Password"))
+    encrypted_password = models.CharField(max_length=255,
+                                          verbose_name=_("Broker Password"))
     centre_id = models.CharField(max_length=255,
                                  verbose_name=_("Centre ID"))
     is_recommended = models.BooleanField(
-        default=False, verbose_name=_("Is Recommended"))
+        default=False,
+        verbose_name=_("WMO Recommended Data"),
+        help_text=_("Check this box if the CAP alerts are not WMO core data."))
     internal_topic = models.CharField(
         max_length=255, default="wis2box/cap/publication",
-        verbose_name=_("Internal Topic"))
-    active = models.BooleanField(default=True, verbose_name=_("Active"))
+        verbose_name=_("Internal Topic"),
+        help_text=_("Provide the internal topic to publish the CAP alerts. If you are publishing to a WIS2 node, leave this unchanged."))
+    active = models.BooleanField(default=True,
+                                 verbose_name=_("Active"),
+                                 help_text=_("Automatically publish CAP alerts to this broker"))
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     retry_on_failure = models.BooleanField(
         default=True, verbose_name=_("Retry on failure"))
 
     panels = [
-        FieldPanel("host"),
-        FieldPanel("port"),
-        FieldPanel("username"),
-        FieldPanel("password"),
-        FieldPanel("centre_id"),
-        FieldPanel("is_recommended"),
+        MultiFieldPanel([
+            FieldPanel("name"),
+            FieldPanel("host"),
+            FieldPanel("port"),
+        ], heading=_("Broker Information")),
+        MultiFieldPanel([
+            FieldPanel("username"),
+            FieldPanel("password"),
+        ], heading=_("Authentication")),
+        MultiFieldPanel([
+            FieldPanel("centre_id"),
+            FieldPanel("is_recommended"),
+            FieldPanel("internal_topic"),
+        ], heading=_("Metadata")),
         FieldPanel("active"),
     ]
 
+    def set_password(self, raw_password):
+        """Encrypts the entered password and stores it in the
+        encrypted_password field, in this way the password stored
+        in the database is not in plain text.
+
+        Args:
+            raw_password (str): The raw password string entered
+            by the user.
+        """
+        encrypted_password = cipher_suite.encrypt(raw_password.encode())
+        self.encrypted_password = b64encode(encrypted_password)
+
+    def get_password(self):
+        """Decrypts the stored password and returns it.
+
+        Returns:
+            str: The original password string entered by the user.
+        """
+        encrypted_password = b64decode(self.encrypted_password)
+        return cipher_suite.decrypt(encrypted_password).decode()
+
+    def save(self, *args, **kwargs):
+        """Overrides the save method to encrypt the password before
+        saving to the database.
+        """
+        # If the password is a string, it is yet to be encrypted
+        if isinstance(self.encrypted_password, str):
+            self.set_password(self.encrypted_password)
+        super().save(*args, **kwargs)
+
     class Meta:
-        ordering = ["-sent"]
-        verbose_name = _("CAP Alert MQTT Broker")
-        verbose_name_plural = _("CAP Alert MQTT Brokers")
+        ordering = ["-created"]
+        verbose_name = _("MQTT Broker")
+        verbose_name_plural = _("MQTT Brokers")
 
     def __str__(self):
         return f"{self.name} - {self.host}:{self.port}"
@@ -206,8 +264,8 @@ class CAPAlertMQTTBrokerEvent(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = _("CAP Alert MQTT Broker Event")
-        verbose_name_plural = _("CAP Alert MQTT Broker Events")
+        verbose_name = _("MQTT Broker Event")
+        verbose_name_plural = _("MQTT Broker Events")
 
     def __str__(self):
         return f"{self.broker.name} - {self.alert.title}"

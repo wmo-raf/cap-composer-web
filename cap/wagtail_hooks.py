@@ -13,18 +13,24 @@ from wagtail import hooks
 from wagtail.actions.copy_page import CopyPageAction
 from wagtail.admin import messages
 from wagtail.admin.forms.pages import CopyForm
-from wagtail.admin.menu import MenuItem
+from wagtail.admin.menu import MenuItem, Menu
 from wagtail.blocks import StreamValue
 from wagtail.models import Page
-from wagtail_modeladmin.helpers import AdminURLHelper, PagePermissionHelper, PageButtonHelper
+from wagtail_modeladmin.helpers import (
+    AdminURLHelper,
+    PagePermissionHelper,
+    PermissionHelper,
+    PageButtonHelper
+)
 from wagtail_modeladmin.options import (
     ModelAdmin,
-    modeladmin_register,
-    ModelAdminGroup
+    ModelAdminGroup,
+    modeladmin_register
 )
+from wagtail_modeladmin.menus import GroupMenuItem
 
 from home.models import HomePage
-from .models import (
+from cap.models import (
     CapAlertPage,
     CAPAlertMQTTBroker,
     CAPAlertMQTTBrokerEvent
@@ -91,8 +97,11 @@ class CAPAdmin(ModelAdmin):
 
 class CAPAlertMQTTAdmin(ModelAdmin):
     model = CAPAlertMQTTBroker
-    menu_label = _('MQTT Brokers')
-    menu_icon = 'multi-cluster-sector'
+    menu_label = CAPAlertMQTTBroker._meta.verbose_name_plural
+    menu_icon = 'globe'
+    list_display = ('name', 'host', 'port', 'centre_id', 'created', 'modified')
+    list_filter = ('centre_id', 'is_recommended', 'active')
+    search_fields = ('name', 'centre_id')
 
 
 class CAPAlertMQTTEventPermissionHelper(PermissionHelper):
@@ -111,10 +120,10 @@ class CAPAlertMQTTEventPermissionHelper(PermissionHelper):
 
 class CAPAlertMQTTEventAdmin(ModelAdmin):
     model = CAPAlertMQTTBrokerEvent
-    menu_label = _('MQTT Brokers')
+    menu_label = CAPAlertMQTTBrokerEvent._meta.verbose_name_plural
     menu_icon = 'notification'
-    list_display = ('mqtt', 'alert', 'created', 'status')
-    list_filter = ('status', 'mqtt')
+    list_display = ('broker', 'alert', 'created', 'status')
+    list_filter = ('broker', 'status')
     inspect_view_enabled = True
 
     permission_helper_class = CAPAlertMQTTEventPermissionHelper
@@ -129,7 +138,14 @@ class CAPMenuGroup(ModelAdminGroup):
     menu_label = _('CAP Alerts')
     menu_icon = 'warning'  # change as required
     menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
-    items = (CAPAdmin,)
+    items = (CAPAdmin, CAPAlertMQTTAdmin, CAPAlertMQTTEventAdmin)
+
+    def get_menu_item(self, order=None):
+        if self.modeladmin_instances:
+            submenu = Menu(items=self.get_submenu_items())
+            return CAPMenuGroupAdminMenuItem(
+                self, self.get_menu_order(), submenu
+            )
 
     def get_submenu_items(self):
         menu_items = []
@@ -140,14 +156,13 @@ class CAPMenuGroup(ModelAdminGroup):
             item_order += 1
 
         try:
-
-            # add CAP import menu
+            # Add CAP import menu
             settings_url = reverse("load_cap_alert")
             import_cap_menu = MenuItem(
                 label=_("Import CAP Alert"), url=settings_url, icon_name="upload")
             menu_items.append(import_cap_menu)
 
-            # add settings menu
+            # Add base settings menu
             settings_url = reverse(
                 "wagtailsettings:edit",
                 args=[CapSetting._meta.app_label,

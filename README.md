@@ -266,6 +266,3 @@ openssl req -x509 -nodes -subj "/CN=<ip-or-domain>" -days 365 -newkey rsa -keyou
 ```
 
 `NOTE:` Make sure to replace `<ip-or-domain>` with the IP address or domain name of the site.
-
-
-
