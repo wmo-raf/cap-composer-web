@@ -1,7 +1,6 @@
 from capeditor.models import CapAlertPageForm, AbstractCapAlertPage
 from django.db import models
 from django.urls import reverse
-from django.forms import PasswordInput
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
@@ -9,9 +8,8 @@ from wagtail import blocks
 from wagtail.models import Page
 from wagtail.signals import page_published
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
-from cryptography.fernet import Fernet
-import os
-from base64 import b64encode, b64decode
+
+from base64 import b64encode
 
 from cap.utils import get_cap_settings, format_date_to_oid
 from cap.tasks import publish_cap_mqtt_message
@@ -149,7 +147,7 @@ class CapAlertPage(AbstractCapAlertPage):
 key = os.getenv('CAP_FERNET_KEY')
 if key is None:
     raise ValueError("CAP_FERNET_KEY environment variable not set")
-cipher_suite = Fernet(key)
+cipher = Fernet(key)
 
 
 class CAPAlertMQTTBroker(models.Model):
@@ -211,25 +209,21 @@ class CAPAlertMQTTBroker(models.Model):
             raw_password (str): The raw password string entered
             by the user.
         """
-        encrypted_password = cipher_suite.encrypt(raw_password.encode())
-        self.encrypted_password = b64encode(encrypted_password)
-
-    def get_password(self):
-        """Decrypts the stored password and returns it.
-
-        Returns:
-            str: The original password string entered by the user.
-        """
-        encrypted_password = b64decode(self.encrypted_password)
-        return cipher_suite.decrypt(encrypted_password).decode()
+        # Encrypts to a byte string
+        encrypted_password = cipher.encrypt(raw_password.encode())
+        # Converts to a base64 string, with prefix "ENCRYPTED:"
+        # to indicate that the password is encrypted
+        self.encrypted_password = "ENCRYPTED:" + \
+            b64encode(encrypted_password).decode()
 
     def save(self, *args, **kwargs):
         """Overrides the save method to encrypt the password before
         saving to the database.
         """
-        # If the password is a string, it is yet to be encrypted
-        if isinstance(self.encrypted_password, str):
+        if not self.encrypted_password.startswith("ENCRYPTED:"):
             self.set_password(self.encrypted_password)
+        # If the password starts with "ENCRYPTED:", it means that
+        # the password is already encrypted, so we can save it.
         super().save(*args, **kwargs)
 
     class Meta:
