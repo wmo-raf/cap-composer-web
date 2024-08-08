@@ -19,7 +19,7 @@ Before following the steps below, make sure you have the following set up:
   environment for containers.
 
 ## Installation
-
+<a name="installation-steps"></a>
 ___
 
 **Warning for Windows users:** To avoid any installation issues, ensure that your default line endings are set to **LF**
@@ -266,3 +266,19 @@ openssl req -x509 -nodes -subj "/CN=<ip-or-domain>" -days 365 -newkey rsa -keyou
 ```
 
 `NOTE:` Make sure to replace `<ip-or-domain>` with the IP address or domain name of the site.
+
+## Development
+
+To test new features, begin by following the <a href="#installation-steps">installation steps</a>.
+
+If any changes are made to the models, the database must also be updated. This can be done as follows:
+
+```bash
+docker exec cap_web python manage.py makemigrations
+```
+*(creates new migration files based on changes to the Django models.)*
+
+```bash
+docker exec cap_web python manage.py migrate
+```
+*(applies the migrations to the database.)*
