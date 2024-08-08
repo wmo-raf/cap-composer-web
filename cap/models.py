@@ -9,7 +9,9 @@ from wagtail.models import Page
 from wagtail.signals import page_published
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 
+import os
 from base64 import b64encode
+from cryptography.fernet import Fernet
 
 from cap.utils import get_cap_settings, format_date_to_oid
 from cap.tasks import publish_cap_mqtt_message
@@ -162,7 +164,7 @@ class CAPAlertMQTTBroker(models.Model):
                             help_text=_("Provide the broker port number"))
     username = models.CharField(max_length=255,
                                 verbose_name=_("Broker Username"))
-    encrypted_password = models.CharField(max_length=255,
+    password = models.CharField(max_length=255,
                                           verbose_name=_("Broker Password"))
     centre_id = models.CharField(max_length=255,
                                  verbose_name=_("Centre ID"))
@@ -200,7 +202,7 @@ class CAPAlertMQTTBroker(models.Model):
         FieldPanel("active"),
     ]
 
-    def set_password(self, raw_password):
+    def encrypt_password(self, raw_password):
         """Encrypts the entered password and stores it in the
         encrypted_password field, in this way the password stored
         in the database is not in plain text.
@@ -213,15 +215,15 @@ class CAPAlertMQTTBroker(models.Model):
         encrypted_password = cipher.encrypt(raw_password.encode())
         # Converts to a base64 string, with prefix "ENCRYPTED:"
         # to indicate that the password is encrypted
-        self.encrypted_password = "ENCRYPTED:" + \
+        self.password = "ENCRYPTED:" + \
             b64encode(encrypted_password).decode()
 
     def save(self, *args, **kwargs):
         """Overrides the save method to encrypt the password before
         saving to the database.
         """
-        if not self.encrypted_password.startswith("ENCRYPTED:"):
-            self.set_password(self.encrypted_password)
+        if not self.password.startswith("ENCRYPTED:"):
+            self.encrypt_password(self.password)
         # If the password starts with "ENCRYPTED:", it means that
         # the password is already encrypted, so we can save it.
         super().save(*args, **kwargs)

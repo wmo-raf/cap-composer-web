@@ -26,7 +26,8 @@ def decrypt_password(encrypted_password) -> str:
     and returns the original entered password.
 
     Args:
-        encrypted_password (str): The stored encrypted password.
+        encrypted_password (str): The stored encrypted password
+        with the "ENCRYPTED:" prefix.
 
     Returns:
         str: The original password string entered by the user.

@@ -47,6 +47,7 @@ services:
       - CAP_CERT_PATH=${CAP_CERT_PATH:-""}
       - CAP_PRIVATE_KEY_PATH=${CAP_PRIVATE_KEY_PATH:-""}
       - CAP_SIGNATURE_METHOD=${CAP_SIGNATURE_METHOD:-"RSA_SHA256"}
+      - CAP_FERNET_KEY=${CAP_FERNET_KEY}
     ports:
       - "8000"
     volumes:
