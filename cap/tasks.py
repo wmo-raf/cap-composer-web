@@ -43,17 +43,115 @@ def decrypt_password(encrypted_password) -> str:
     return cipher.decrypt(encrypted_password).decode()
 
 
-def publish_cap_mqtt_message(cap_alert_id):
-    from cap.models import (
-        CapAlertPage, CAPAlertMQTTBroker, CAPAlertMQTTBrokerEvent
+def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
+    """Formats the message for MQTT publishing and publishes it
+    to a given broker.
+
+    Args:
+        alert (CapAlertPage): The CAP alert instance to obtain metadata.
+        alert_xml (bytes): The CAP alert XML bytes to be published.
+        broker (CAPALertMQTTBroker): The broker configured by the user,
+        containing details such as the host, port, and authentication.
+
+    Raises:
+        ex: An exception if the Paho MQTT publishing step fails
+        after all retries.
+    """
+
+    from cap.models import CAPAlertMQTTBrokerEvent
+
+    logging.info(
+        f"""
+        Publishing CAP Alert: {alert.title} ({alert.id}) to broker:
+        {broker.name} - {broker.host}:{broker.port}
+        """
     )
+
+    event = CAPAlertMQTTBrokerEvent.objects.filter(
+        broker=broker, alert=alert
+    ).first()
+
+    if not event:
+        logging.info(
+            f"No existing event found for broker: {broker.name}, creating new event"
+        )
+        event = CAPAlertMQTTBrokerEvent.objects.create(
+            broker=broker,
+            alert=alert,
+            status="PENDING",
+        )
+
+    # Encode the CAP alert message in base64
+    data = b64encode(alert_xml).decode()
+
+    # Create the filename
+    filename = f"{alert.status}-{alert.sent}-{alert.title}.xml"
+
+    # Create the notification to be sent to the internal broker
+    msg = {
+        "centre_id": broker.centre_id,
+        "is_recommended": broker.is_recommended,
+        "data": data,
+        "filename": filename,
+        "_meta": {}
+    }
+
+    private_auth = {"username": broker.username,
+                    "password": decrypt_password(broker.password)}
+
+    # Publish notification on internal broker, using 5 retries
+    # with an exponential backoff delay
+    max_retries = 5
+    initial_delay = 2
+    for attempt in range(max_retries):
+        try:
+            publish.single(
+                topic=broker.internal_topic,
+                payload=json.dumps(msg),
+                qos=1,
+                retain=False,
+                hostname=broker.host,
+                port=int(broker.port),
+                auth=private_auth,
+            )
+            event.status = "SUCCESS"
+            logging.info(
+                f"CAP Alert successfully published to MQTT broker: {broker.name}"
+            )
+            event.save()
+            break
+        except Exception as ex:
+            logging.warning(
+                f"CAP Alert MQTT Broker Event failed: {ex}",
+                exc_info=True)
+            event.status = "FAILURE"
+            event.retries += 1
+            event.error = str(ex)
+            event.save()
+            # Exponential backoff delays
+            if attempt < max_retries - 1:
+                delay = initial_delay * (2 ** attempt)
+                logging.info(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                raise ex
+
+
+def publish_cap_to_all_mqtt_brokers(cap_alert_id):
+    """Automatically publishes the CAP alert to all MQTT brokers
+    configured in the editor.
+
+        cap_alert_id (int): The ID of the CAP alert, used to fetch
+        the CAP alert instance from the database.
+    """
+
+    from cap.models import CapAlertPage, CAPAlertMQTTBroker
 
     logging.info(
         f"Starting publish_cap_mqtt_message for CAP Alert ID: {cap_alert_id}")
 
     # Get all active brokers
     brokers = CAPAlertMQTTBroker.objects.filter(active=True)
-
     logging.info(f"Found {len(brokers)} active brokers")
 
     if not brokers:
@@ -75,8 +173,6 @@ def publish_cap_mqtt_message(cap_alert_id):
         logging.warning(f"CAP Alert: {cap_alert_id} is not actionable")
         return
 
-    logging.info(f"CAP Alert data retrieved: {cap_alert}")
-
     # Get the processed CAP alert XML
     alert_xml, signed = serialize_and_sign_cap_alert(cap_alert)
 
@@ -85,81 +181,5 @@ def publish_cap_mqtt_message(cap_alert_id):
         # Continue to publish anyway, the acceptance/rejection of non-signed
         # alerts should be handled on the wis2box side
 
-    # Publish the alert to all active brokers
     for broker in brokers:
-        logging.info(
-            f"Publishing CAP Alert: {cap_alert_id} to broker: {broker.name} - {broker.host}:{broker.port}")
-        event = CAPAlertMQTTBrokerEvent.objects.filter(
-            broker=broker, alert=cap_alert
-        ).first()
-
-        logging.info(f"Event found: {event}")
-
-        if not event:
-            logging.info(
-                f"No existing event found for broker: {broker.name}, creating new event")
-            event = CAPAlertMQTTBrokerEvent.objects.create(
-                broker=broker,
-                alert=cap_alert,
-                status="PENDING",
-            )
-
-        # Encode the CAP alert message in base64
-        data = b64encode(alert_xml).decode()
-        logging.info("CAP Alert message encoded in base64")
-
-        # Create the filename
-        filename = f"{cap_alert.status}-{cap_alert.sent}-{cap_alert.title}.xml"
-
-        # Create the notification to be sent to the internal broker
-        msg = {
-            "centre_id": broker.centre_id,
-            "is_recommended": broker.is_recommended,
-            "data": data,
-            "filename": filename,
-            "_meta": {}
-        }
-
-        logging.info(f"Preparing message: {msg}")
-
-        private_auth = {"username": broker.username,
-                        "password": decrypt_password(broker.password)}
-
-        logging.info(f"Private auth: {private_auth}")
-
-        # Publish notification on internal broker, using 5 retries
-        # with an exponential backoff delay
-        max_retries = 5
-        initial_delay = 2
-        for attempt in range(max_retries):
-            try:
-                logging.info(
-                    f"Publishing message to broker with internal topic {broker.internal_topic}")
-                publish.single(
-                    topic=broker.internal_topic,
-                    payload=json.dumps(msg),
-                    qos=1,
-                    retain=False,
-                    hostname=broker.host,
-                    port=int(broker.port),
-                    auth=private_auth,
-                )
-                event.status = "SUCCESS"
-                logging.info(
-                    f"CAP Alert successfully published to MQTT broker: {broker.name}")
-                event.save()
-                break
-            except Exception as ex:
-                logging.warning(
-                    f"CAP Alert MQTT Broker Event failed: {ex}", exc_info=True)
-                event.status = "FAILURE"
-                event.retries += 1
-                event.error = str(ex)
-                event.save()
-                # Exponential backoff delays
-                if attempt < max_retries - 1:
-                    delay = initial_delay * (2 ** attempt)
-                    logging.info(f"Retrying in {delay} seconds...")
-                    time.sleep(delay)
-                else:
-                    raise ex
+        publish_cap_to_each_mqtt_broker(cap_alert, alert_xml, broker)

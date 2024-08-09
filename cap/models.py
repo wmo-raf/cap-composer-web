@@ -14,7 +14,7 @@ from base64 import b64encode
 from cryptography.fernet import Fernet
 
 from cap.utils import get_cap_settings, format_date_to_oid
-from cap.tasks import publish_cap_mqtt_message
+from cap.tasks import publish_cap_to_all_mqtt_brokers
 
 
 class CapPageForm(CapAlertPageForm):
@@ -272,7 +272,7 @@ def on_publish_cap_alert(sender, **kwargs):
 
     if instance.status == "Actual":
         try:
-            publish_cap_mqtt_message(instance.id)
+            publish_cap_to_all_mqtt_brokers(instance)
         except Exception:
             pass
 
