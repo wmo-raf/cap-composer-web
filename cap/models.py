@@ -272,7 +272,7 @@ def on_publish_cap_alert(sender, **kwargs):
 
     if instance.status == "Actual":
         try:
-            publish_cap_mqtt_message(instance)
+            publish_cap_mqtt_message(instance.id)
         except Exception:
             pass
 
