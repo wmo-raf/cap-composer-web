@@ -4,9 +4,12 @@ from django.urls import reverse
 from lxml import etree
 from wagtail.api.v2.utils import get_full_url
 from wagtail.models import Site
+import logging
 
 from cap.sign import sign_xml
 
+# Set log level
+logging.basicConfig(level=logging.INFO)
 
 def get_cap_settings():
     site = Site.objects.get(is_default_site=True)
@@ -61,8 +64,8 @@ def serialize_and_sign_cap_alert(alert, request=None):
         if signed_xml:
             xml = signed_xml
             signed = True
-    except Exception:
-        pass
+    except Exception as e:
+        logging.warning(f"Failed to sign CAP alert: {e}")
 
     if signed:
         root = etree.fromstring(xml)

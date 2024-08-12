@@ -31,14 +31,11 @@ def decrypt_password(encrypted_password) -> str:
 
     Args:
         encrypted_password (str): The stored encrypted password
-        with the "ENCRYPTED:" prefix.
 
     Returns:
         str: The original password string entered by the user.
     """
-    # Begin by removing the "ENCRYPTED:" prefix
-    encrypted_password = encrypted_password.replace("ENCRYPTED:", "")
-    # Now decrypt it using the Fernet key
+    # Decrypt it using the Fernet key
     encrypted_password = b64decode(encrypted_password.encode())
     return cipher.decrypt(encrypted_password).decode()
 

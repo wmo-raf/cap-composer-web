@@ -153,25 +153,32 @@ cipher = Fernet(key)
 
 
 class CAPAlertMQTTBroker(models.Model):
+    # Broker Information
     name = models.CharField(max_length=255,
                             verbose_name=_("Name"),
                             help_text=_("Provide a name to identify the broker"))
     host = models.CharField(max_length=255,
                             verbose_name=_("Broker Host"),
                             help_text=_("Provide the broker host name or IP address"))
-    port = models.CharField(max_length=255,
-                            verbose_name=_("Broker Port"),
-                            help_text=_("Provide the broker port number"))
+    port = models.PositiveIntegerField(
+        verbose_name=_("Broker Port"),
+        help_text=_("Provide the broker port number")
+    )
+    # Authentication
     username = models.CharField(max_length=255,
                                 verbose_name=_("Broker Username"))
-    password = models.CharField(max_length=255,
-                                          verbose_name=_("Broker Password"))
+    new_password = models.CharField(max_length=255,
+                                    verbose_name=_("Broker Password"),
+                                    blank=True)
+    password = models.CharField(max_length=255)
+    # WIS2 Metadata
     centre_id = models.CharField(max_length=255,
                                  verbose_name=_("Centre ID"))
     is_recommended = models.BooleanField(
         default=False,
         verbose_name=_("WMO Recommended Data"),
         help_text=_("Check this box if the CAP alerts are not WMO core data."))
+    # Misc
     internal_topic = models.CharField(
         max_length=255, default="wis2box/cap/publication",
         verbose_name=_("Internal Topic"),
@@ -192,17 +199,17 @@ class CAPAlertMQTTBroker(models.Model):
         ], heading=_("Broker Information")),
         MultiFieldPanel([
             FieldPanel("username"),
-            FieldPanel("password"),
+            FieldPanel("new_password"),
         ], heading=_("Authentication")),
         MultiFieldPanel([
             FieldPanel("centre_id"),
             FieldPanel("is_recommended"),
-            FieldPanel("internal_topic"),
         ], heading=_("Metadata")),
+        FieldPanel("internal_topic"),
         FieldPanel("active"),
     ]
 
-    def encrypt_password(self, raw_password):
+    def encrypt_password(self, raw_password) -> str:
         """Encrypts the entered password and stores it in the
         encrypted_password field, in this way the password stored
         in the database is not in plain text.
@@ -210,22 +217,25 @@ class CAPAlertMQTTBroker(models.Model):
         Args:
             raw_password (str): The raw password string entered
             by the user.
+
+        Returns:
+            str: The encrypted password string.
         """
         # Encrypts to a byte string
         encrypted_password = cipher.encrypt(raw_password.encode())
-        # Converts to a base64 string, with prefix "ENCRYPTED:"
-        # to indicate that the password is encrypted
-        self.password = "ENCRYPTED:" + \
-            b64encode(encrypted_password).decode()
+        # Converts to a base64 string
+        return b64encode(encrypted_password).decode()
 
     def save(self, *args, **kwargs):
-        """Overrides the save method to encrypt the password before
-        saving to the database.
+        """This does the following:
+
+        1. If a new password is provided, it is encrypted and saved as 'password'.
+        2. The new password is reset to an empty string.
         """
-        if not self.password.startswith("ENCRYPTED:"):
-            self.encrypt_password(self.password)
-        # If the password starts with "ENCRYPTED:", it means that
-        # the password is already encrypted, so we can save it.
+        if self.new_password != "":
+            self.password = self.encrypt_password(self.new_password)
+            self.new_password = ""
+
         super().save(*args, **kwargs)
 
     class Meta:
