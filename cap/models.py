@@ -1,3 +1,4 @@
+from wagtail.admin.forms import WagtailAdminPageForm
 from capeditor.models import CapAlertPageForm, AbstractCapAlertPage
 from django.db import models
 from django.urls import reverse
@@ -154,6 +155,12 @@ if len(key) != 44:
 cipher = Fernet(key)
 
 
+class CAPAlertMQTTBrokerManager(models.Manager):
+    def instance_exists(self, instance_id):
+        return super(CAPAlertMQTTBrokerManager, self).get_queryset().filter(
+            id=instance_id).exists()
+
+
 class CAPAlertMQTTBroker(models.Model):
     # Broker Information
     name = models.CharField(max_length=255,
@@ -236,10 +243,15 @@ class CAPAlertMQTTBroker(models.Model):
 
         1. If a new password is provided, it is encrypted and saved as 'password'.
         2. The new password is reset to an empty string.
+        3. Resets the verbose name of the new_password field.
+        4. Calls the parent save method.
         """
         if self.new_password != "":
             self.password = self.encrypt_password(self.new_password)
             self.new_password = ""
+
+        self._meta.get_field(
+            'new_password').verbose_name = 'Broker Password'
 
         super().save(*args, **kwargs)
 
@@ -247,6 +259,19 @@ class CAPAlertMQTTBroker(models.Model):
         ordering = ["-created"]
         verbose_name = _("MQTT Broker")
         verbose_name_plural = _("MQTT Brokers")
+
+    def __init__(self, *args, **kwargs):
+        """Changes the verbose name of the password field based on
+        the presence of a username. If a username is provided initially,
+        this means they must be editing the form.
+        """
+        super().__init__(*args, **kwargs)
+        if self.username != "":
+            self._meta.get_field(
+                'new_password').verbose_name = 'Update Broker Password'
+        else:
+            self._meta.get_field(
+                'new_password').verbose_name = 'Broker Password'
 
     def __str__(self):
         return f"{self.name} - {self.host}:{self.port}"
