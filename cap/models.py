@@ -172,6 +172,7 @@ class CAPAlertMQTTBroker(models.Model):
                                 verbose_name=_("Broker Username"))
     new_password = models.CharField(max_length=255,
                                     verbose_name=_("Broker Password"),
+                                    help_text=_("Enter a new password to update the stored password"),
                                     blank=True)
     password = models.CharField(max_length=255)
     # WIS2 Metadata
@@ -237,15 +238,11 @@ class CAPAlertMQTTBroker(models.Model):
 
         1. If a new password is provided, it is encrypted and saved as 'password'.
         2. The new password is reset to an empty string.
-        3. Resets the verbose name of the new_password field.
-        4. Calls the parent save method.
+        3. Calls the parent save method.
         """
         if self.new_password != "":
             self.password = self.encrypt_password(self.new_password)
             self.new_password = ""
-
-        self._meta.get_field(
-            'new_password').verbose_name = 'Broker Password'
 
         super().save(*args, **kwargs)
 
@@ -253,19 +250,6 @@ class CAPAlertMQTTBroker(models.Model):
         ordering = ["-created"]
         verbose_name = _("MQTT Broker")
         verbose_name_plural = _("MQTT Brokers")
-
-    def __init__(self, *args, **kwargs):
-        """Changes the verbose name of the password field based on
-        the presence of a username. If a username is provided initially,
-        this means they must be editing the form.
-        """
-        super().__init__(*args, **kwargs)
-        if self.username != "":
-            self._meta.get_field(
-                'new_password').verbose_name = 'Update Broker Password'
-        else:
-            self._meta.get_field(
-                'new_password').verbose_name = 'Broker Password'
 
     def __str__(self):
         return f"{self.name} - {self.host}:{self.port}"
