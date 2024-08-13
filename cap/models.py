@@ -149,6 +149,8 @@ class CapAlertPage(AbstractCapAlertPage):
 key = os.getenv('CAP_FERNET_KEY')
 if key is None:
     raise ValueError("CAP_FERNET_KEY environment variable not set")
+if len(key) != 44:
+    raise ValueError("CAP_FERNET_KEY must be 44 characters long")
 cipher = Fernet(key)
 
 
@@ -173,7 +175,8 @@ class CAPAlertMQTTBroker(models.Model):
     password = models.CharField(max_length=255)
     # WIS2 Metadata
     centre_id = models.CharField(max_length=255,
-                                 verbose_name=_("Centre ID"))
+                                 verbose_name=_("Centre ID"),
+                                 blank=True)
     is_recommended = models.BooleanField(
         default=False,
         verbose_name=_("WMO Recommended Data"),
@@ -204,7 +207,9 @@ class CAPAlertMQTTBroker(models.Model):
         MultiFieldPanel([
             FieldPanel("centre_id"),
             FieldPanel("is_recommended"),
-        ], heading=_("Metadata")),
+        ], heading=_("WIS2 Metadata"),
+            classname="collapsed",
+            help_text=_("Complete this section if you would like to publish to a WIS2Box.")),
         FieldPanel("internal_topic"),
         FieldPanel("active"),
     ]

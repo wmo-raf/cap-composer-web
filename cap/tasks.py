@@ -22,6 +22,8 @@ def get_object_or_none(model_class, **kwargs):
 key = os.getenv('CAP_FERNET_KEY')
 if key is None:
     raise ValueError("CAP_FERNET_KEY environment variable not set")
+if len(key) != 44:
+    raise ValueError("CAP_FERNET_KEY must be 44 characters long")
 cipher = Fernet(key)
 
 
