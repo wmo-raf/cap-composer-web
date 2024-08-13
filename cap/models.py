@@ -155,12 +155,6 @@ if len(key) != 44:
 cipher = Fernet(key)
 
 
-class CAPAlertMQTTBrokerManager(models.Manager):
-    def instance_exists(self, instance_id):
-        return super(CAPAlertMQTTBrokerManager, self).get_queryset().filter(
-            id=instance_id).exists()
-
-
 class CAPAlertMQTTBroker(models.Model):
     # Broker Information
     name = models.CharField(max_length=255,
