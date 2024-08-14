@@ -81,15 +81,12 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
         )
 
     # Encode the CAP alert message in base64
-    logging.info("Encoding CAP Alert XML in base64")
     data = b64encode(alert_xml).decode()
-    logging.info("CAP Alert XML encoded in base64")
 
     # Create the filename
     filename = f"{alert.status}-{alert.sent}-{alert.title}.xml"
 
     # Create the notification to be sent to the internal broker
-    logging.info("Creating the notification message")
     msg = {
         "centre_id": broker.centre_id,
         "is_recommended": broker.is_recommended,
@@ -98,7 +95,6 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
         "_meta": {}
     }
 
-    logging.info(f"Decrypted password: {decrypt_password(broker.password)}")
     private_auth = {"username": broker.username,
                     "password": decrypt_password(broker.password)}
 
@@ -186,5 +182,5 @@ def publish_cap_to_all_mqtt_brokers(cap_alert_id):
         # alerts should be handled on the wis2box side
 
     for broker in brokers:
-        logging.info("About to publish to each broker")
+        logging.info(f"About to publish to broker {broker.name}")
         publish_cap_to_each_mqtt_broker(cap_alert, alert_xml, broker)
