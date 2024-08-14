@@ -90,6 +90,7 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
     msg = {
         "centre_id": broker.centre_id,
         "is_recommended": broker.is_recommended,
+        "metadata_id": broker.metadata_id,
         "data": data,
         "filename": filename,
         "_meta": {}

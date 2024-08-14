@@ -183,6 +183,10 @@ class CAPAlertMQTTBroker(models.Model):
         default=False,
         verbose_name=_("WMO Recommended Data"),
         help_text=_("Check this box if the CAP alerts are not WMO core data."))
+    metadata_id = models.CharField(max_length=255,
+                                    verbose_name=_("Dataset ID"),
+                                    help_text=_("Provide the metadata ID for your dataset registered in the wis2box. If you do not have this, please create a dataset in the wis2box before proceeding."),
+                                    blank=True)
     # Misc
     internal_topic = models.CharField(
         max_length=255, default="wis2box/cap/publication",
@@ -209,6 +213,7 @@ class CAPAlertMQTTBroker(models.Model):
         MultiFieldPanel([
             FieldPanel("centre_id"),
             FieldPanel("is_recommended"),
+            FieldPanel("metadata_id"),
         ], heading=_("WIS2 Metadata"),
             classname="collapsed",
             help_text=_("Complete this section if you would like to publish to a WIS2Box.")),
