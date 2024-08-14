@@ -81,12 +81,15 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
         )
 
     # Encode the CAP alert message in base64
+    logging.info("Encoding CAP Alert XML in base64")
     data = b64encode(alert_xml).decode()
+    logging.info("CAP Alert XML encoded in base64")
 
     # Create the filename
     filename = f"{alert.status}-{alert.sent}-{alert.title}.xml"
 
     # Create the notification to be sent to the internal broker
+    logging.info("Creating the notification message")
     msg = {
         "centre_id": broker.centre_id,
         "is_recommended": broker.is_recommended,
@@ -95,6 +98,7 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
         "_meta": {}
     }
 
+    logging.info(f"Decrypted password: {decrypt_password(broker.password)}")
     private_auth = {"username": broker.username,
                     "password": decrypt_password(broker.password)}
 
@@ -147,7 +151,7 @@ def publish_cap_to_all_mqtt_brokers(cap_alert_id):
     from cap.models import CapAlertPage, CAPAlertMQTTBroker
 
     logging.info(
-        f"Starting publish_cap_mqtt_message for CAP Alert ID: {cap_alert_id}")
+        f"Starting publish_cap_to_all_mqtt_brokers for CAP Alert ID: {cap_alert_id}")
 
     # Get all active brokers
     brokers = CAPAlertMQTTBroker.objects.filter(active=True)
@@ -159,6 +163,7 @@ def publish_cap_to_all_mqtt_brokers(cap_alert_id):
 
     # Get the cap alert data to be published
     cap_alert = get_object_or_none(CapAlertPage, id=cap_alert_id)
+    logging.info(f"CAP Alert: {cap_alert} found")
 
     if not cap_alert:
         logging.warning(f"CAP Alert: {cap_alert_id} not found")
@@ -181,4 +186,5 @@ def publish_cap_to_all_mqtt_brokers(cap_alert_id):
         # alerts should be handled on the wis2box side
 
     for broker in brokers:
+        logging.info("About to publish to each broker")
         publish_cap_to_each_mqtt_broker(cap_alert, alert_xml, broker)

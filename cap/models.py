@@ -290,7 +290,7 @@ def on_publish_cap_alert(sender, **kwargs):
 
     if instance.status == "Actual":
         try:
-            publish_cap_to_all_mqtt_brokers(instance)
+            publish_cap_to_all_mqtt_brokers(instance.id)
         except Exception:
             pass
 

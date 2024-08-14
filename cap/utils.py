@@ -6,7 +6,7 @@ from wagtail.api.v2.utils import get_full_url
 from wagtail.models import Site
 import logging
 
-from cap.sign import sign_xml
+from cap.sign import sign_cap_xml
 
 # Set log level
 logging.basicConfig(level=logging.INFO)
@@ -60,7 +60,7 @@ def serialize_and_sign_cap_alert(alert, request=None):
     # Try to sign the XML
     signed = False
     try:
-        signed_xml = sign_xml(xml_bytes)
+        signed_xml = sign_cap_xml(xml_bytes)
         if signed_xml:
             xml = signed_xml
             signed = True
