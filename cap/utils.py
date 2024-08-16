@@ -11,6 +11,7 @@ from cap.sign import sign_cap_xml
 # Set log level
 logging.basicConfig(level=logging.INFO)
 
+
 def get_cap_settings():
     site = Site.objects.get(is_default_site=True)
     cap_settings = CapSetting.for_site(site)
@@ -65,7 +66,13 @@ def serialize_and_sign_cap_alert(alert, request=None):
             xml = signed_xml
             signed = True
     except Exception as e:
+        # Since the exceptions are not legible, add a legible message
         logging.warning(f"Failed to sign CAP alert: {e}")
+        logging.warning("""
+                        Please ensure that your certificate is valid,
+                        your private key is correct,
+                        and the chosen signature method is compatible with
+                        the private key.""")
 
     if signed:
         root = etree.fromstring(xml)
