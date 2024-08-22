@@ -88,12 +88,9 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
 
     # Create the notification to be sent to the internal broker
     msg = {
-        "centre_id": broker.centre_id,
-        "is_recommended": broker.is_recommended,
         "metadata_id": broker.metadata_id,
         "data": data,
-        "filename": filename,
-        "_meta": {}
+        "filename": filename
     }
 
     private_auth = {"username": broker.username,

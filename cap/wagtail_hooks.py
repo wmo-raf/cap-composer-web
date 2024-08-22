@@ -99,9 +99,9 @@ class CAPAlertMQTTAdmin(ModelAdmin):
     model = CAPAlertMQTTBroker
     menu_label = CAPAlertMQTTBroker._meta.verbose_name_plural
     menu_icon = 'globe'
-    list_display = ('name', 'host', 'port', 'centre_id', 'created', 'modified')
-    list_filter = ('centre_id', 'is_recommended', 'active')
-    search_fields = ('name', 'centre_id')
+    list_display = ('name', 'host', 'port', 'created', 'modified')
+    list_filter = ('metadata_id', 'active')
+    search_fields = ('name', 'metadata_id')
 
 
 class CAPAlertMQTTEventPermissionHelper(PermissionHelper):

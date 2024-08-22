@@ -176,13 +176,6 @@ class CAPAlertMQTTBroker(models.Model):
                                     blank=True)
     password = models.CharField(max_length=255)
     # WIS2 Metadata
-    centre_id = models.CharField(max_length=255,
-                                 verbose_name=_("Centre ID"),
-                                 blank=True)
-    is_recommended = models.BooleanField(
-        default=False,
-        verbose_name=_("WMO Recommended Data"),
-        help_text=_("Check this box if the CAP alerts are not WMO core data."))
     metadata_id = models.CharField(max_length=255,
                                     verbose_name=_("Dataset ID"),
                                     help_text=_("Provide the metadata ID for your dataset registered in the wis2box. If you do not have this, please create a dataset in the wis2box before proceeding."),
@@ -211,8 +204,6 @@ class CAPAlertMQTTBroker(models.Model):
             FieldPanel("new_password"),
         ], heading=_("Authentication")),
         MultiFieldPanel([
-            FieldPanel("centre_id"),
-            FieldPanel("is_recommended"),
             FieldPanel("metadata_id"),
         ], heading=_("WIS2 Metadata"),
             classname="collapsed",
