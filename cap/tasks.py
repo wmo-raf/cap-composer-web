@@ -82,9 +82,10 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
 
     # Encode the CAP alert message in base64
     data = b64encode(alert_xml).decode()
-
+    alert_date = alert.sent.strftime("%Y%m%d")
+    alert_time = alert.sent.strftime("%H%M")
     # Create the filename
-    filename = f"{alert.status}-{alert.sent}-{alert.title}.xml"
+    filename = f"{alert.status}_{alert_date}_{alert_time}_{alert.title}.xml"
 
     # Create the notification to be sent to the internal broker
     msg = {
