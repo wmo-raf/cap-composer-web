@@ -35,7 +35,7 @@ def format_date_to_oid(date):
 
 def serialize_and_sign_cap_alert(alert, request=None):
     """This function does the following:
-    1. Takes an alert object and an optional request object and 
+    1. Takes an alert object and an optional request object and
     serializes the alert using the AlertSerializer.
     2. Renders the serialized data into XML using the CapXMLRenderer.
     3. Includes a HTML stylesheet for styling the XML.
