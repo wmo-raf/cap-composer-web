@@ -59,21 +59,11 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
 
     from cap.models import CAPAlertMQTTBrokerEvent
 
-    logging.info(
-        f"""
-        Publishing CAP Alert: {alert.title} ({alert.id}) to broker:
-        {broker.name} - {broker.host}:{broker.port}
-        """
-    )
-
     event = CAPAlertMQTTBrokerEvent.objects.filter(
         broker=broker, alert=alert
     ).first()
 
     if not event:
-        logging.info(
-            f"No existing event found for broker: {broker.name}, creating new event"
-        )
         event = CAPAlertMQTTBrokerEvent.objects.create(
             broker=broker,
             alert=alert,
@@ -149,7 +139,6 @@ def publish_cap_to_all_mqtt_brokers(cap_alert_id):
 
     # Get all active brokers
     brokers = CAPAlertMQTTBroker.objects.filter(active=True)
-    logging.info(f"Found {len(brokers)} active brokers")
 
     if not brokers:
         logging.warning("No MQTT brokers found")
@@ -177,8 +166,7 @@ def publish_cap_to_all_mqtt_brokers(cap_alert_id):
     if not signed:
         logging.warning(f"CAP Alert: {cap_alert_id} not signed")
         # Continue to publish anyway, the acceptance/rejection of non-signed
-        # alerts should be handled on the wis2box side
+        # alerts should be handled on the receiving side (e.g. a wis2box)
 
     for broker in brokers:
-        logging.info(f"About to publish to broker {broker.name}")
         publish_cap_to_each_mqtt_broker(cap_alert, alert_xml, broker)
