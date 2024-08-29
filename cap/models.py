@@ -175,16 +175,22 @@ class CAPAlertMQTTBroker(models.Model):
                                     help_text=_("Enter a new password to update the stored password"),
                                     blank=True)
     password = models.CharField(max_length=255)
+    # Checkbox for if the MQTT broker is a WIS2 node
+    wis2_node = models.BooleanField(
+        default=True, verbose_name=_("WIS2 node"),
+        help_text=_("Check this box if you are providing the broker details of a wis2box.")
+    )
     # WIS2 Metadata
     metadata_id = models.CharField(max_length=255,
                                     verbose_name=_("Dataset ID"),
                                     help_text=_("Provide the metadata ID for your dataset registered in the wis2box. If you do not have this, please create a dataset in the wis2box before proceeding."),
                                     blank=True)
-    # Misc
+    # Non-WIS2 Metadata
     internal_topic = models.CharField(
-        max_length=255, default="wis2box/cap/publication",
-        verbose_name=_("Internal Topic"),
-        help_text=_("Provide the internal topic to publish the CAP alerts. If you are publishing to a WIS2 node, leave this unchanged."))
+        max_length=255,
+        verbose_name=_("Topic"),
+        help_text=_("Provide the MQTT topic to publish the CAP alerts."),
+        blank=True)
     active = models.BooleanField(default=True,
                                  verbose_name=_("Active"),
                                  help_text=_("Automatically publish CAP alerts to this broker"))
@@ -203,11 +209,8 @@ class CAPAlertMQTTBroker(models.Model):
             FieldPanel("username"),
             FieldPanel("new_password"),
         ], heading=_("Authentication")),
-        MultiFieldPanel([
-            FieldPanel("metadata_id"),
-        ], heading=_("WIS2 Metadata"),
-            classname="collapsed",
-            help_text=_("Complete this section if you would like to publish to a WIS2Box.")),
+        FieldPanel("wis2_node"),
+        FieldPanel("metadata_id"),
         FieldPanel("internal_topic"),
         FieldPanel("active"),
     ]

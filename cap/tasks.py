@@ -78,13 +78,20 @@ def publish_cap_to_each_mqtt_broker(alert, alert_xml, broker):
 
     # Create the notification to be sent to the internal broker
     msg = {
-        "metadata_id": broker.metadata_id,
         "data": data,
         "filename": filename
     }
 
+    # If it is a WIS2 node, add the metadata ID
+    if broker.wis2_node:
+        msg["metadata_id"] = broker.metadata_id
+
     private_auth = {"username": broker.username,
                     "password": decrypt_password(broker.password)}
+
+    # If the internal topic is not set, then it is a wis2box broker
+    if broker.wis2_node or (not broker.internal_topic) or (broker.internal_topic == ""):
+        broker.internal_topic = "wis2box/cap/publication"
 
     # Publish notification on internal broker, using 5 retries
     # with an exponential backoff delay

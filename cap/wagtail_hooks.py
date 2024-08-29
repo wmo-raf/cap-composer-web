@@ -517,3 +517,7 @@ def register_icons(icons):
         'cap/icons/response.svg',
         'cap/icons/warning.svg',
     ]
+
+@hooks.register('insert_editor_js')
+def editor_js():
+    return '<script src="/static/cap/js/collapse_panels.js"></script>'
