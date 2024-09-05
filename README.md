@@ -19,7 +19,7 @@ Before following the steps below, make sure you have the following set up:
   environment for containers.
 
 ## Installation
-
+<a name="installation-steps"></a>
 ___
 
 **Warning for Windows users:** To avoid any installation issues, ensure that your default line endings are set to **LF**
@@ -112,6 +112,7 @@ docker-compose exec cap_web python manage.py createsuperuser
 | CAP_DB_NAME                  | Postgres Database name                                                                                                                                                                                             | Yes      |                         |                                                                                                                                                                                     |
 | CAP_DB_PASSWORD              | Postgres Database password                                                                                                                                                                                         | Yes      |                         | Avoid using the '@' and '$' or any other special characters without escaping them. If you have to include them, first make sure your password is URL-Encoded to avoid errors        |
 | CAP_DB_VOLUME                | Docker Database volume path                                                                                                                                                                                        | Yes      | ./docker/dbdata         |                                                                                                                                                                                     |
+| CAP_FERNET_KEY                |                                                            The key used for encryption of MQTT passwords                                                                                                                             | Yes      |          |                                                                                                                                                                 44 character URL-safe string, e.g. ERKBpLzB_P8azusL-CGK-LGZkV8T8edmmN4oYLi0w3Q=                    |
 | CAP_DEBUG                    | Django Debug mode                                                                                                                                                                                                  | No       | False                   |                                                                                                                                                                                     |
 | CAP_SITE_NAME                | Wagtail Site name                                                                                                                                                                                                  | No       | CAP Composer            |                                                                                                                                                                                     |
 | CAP_ADMIN_URL_PATH           | Admin URL path                                                                                                                                                                                                     | No       | cap-admin               |                                                                                                                                                                                     |
@@ -262,10 +263,23 @@ If you do not have a certificate and private key, you can generate a self-signed
 following commands, and place them in the `CAP_TLS_VOLUME` directory.
 
 ```bash
-openssl req -x509 -nodes -subj "/CN=<ip-or-domain>" -days 365 -newkey rsa -keyout privkey.pem -out cert.pem 
+openssl req -x509 -nodes -subj "/CN=<ip-or-domain>" -days 365 -newkey rsa -keyout privkey.pem -out cert.pem
 ```
 
 `NOTE:` Make sure to replace `<ip-or-domain>` with the IP address or domain name of the site.
 
+## Development
 
+To test new features, begin by following the <a href="#installation-steps">installation steps</a>.
 
+If any changes are made to the models, the database must also be updated. This can be done as follows:
+
+```bash
+docker exec cap_web python manage.py makemigrations
+```
+*(creates new migration files based on changes to the Django models.)*
+
+```bash
+docker exec cap_web python manage.py migrate
+```
+*(applies the migrations to the database.)*

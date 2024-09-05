@@ -104,3 +104,7 @@ cache
 docker/dbdata
 docker/capsite/media
 docker/capsite/static
+docker/capsite/tls
+
+# Ignore the virtual environment
+venv/

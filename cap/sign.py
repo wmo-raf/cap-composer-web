@@ -1,13 +1,15 @@
 from django.conf import settings
-from lxml import etree
+from xml.etree import ElementTree as ET
+from lxml import etree as lxml_ET
 from signxml import XMLSigner, SignatureMethod
 
 cap_cert_path = getattr(settings, "CAP_CERT_PATH", "")
 cap_private_key_path = getattr(settings, "CAP_PRIVATE_KEY_PATH", "")
-cap_signature_method = getattr(settings, "CAP_SIGNATURE_METHOD", SignatureMethod.RSA_SHA256)
+cap_signature_method = getattr(
+    settings, "CAP_SIGNATURE_METHOD", SignatureMethod.RSA_SHA256)
 
 
-def sign_xml(xml_string):
+def sign_cap_xml(xml_bytes):
     if not cap_cert_path or not cap_private_key_path:
         return None
 
@@ -17,6 +19,18 @@ def sign_xml(xml_string):
     with open(cap_cert_path, "rb") as cert_file:
         cert = cert_file.read()
 
-    root = etree.fromstring(xml_string)
-    signed_root = XMLSigner(signature_algorithm=cap_signature_method).sign(root, key=key, cert=cert)
-    return etree.tostring(signed_root)
+    # register cap namespace¬
+    ET.register_namespace("cap", "urn:oasis:names:tc:emergency:cap:1.2")
+    root = ET.fromstring(xml_bytes)
+
+    # specify location for enveloped signature
+    # https://technotes.shemyak.com/posts/xml-signatures-with-python-elementtree/
+    # https://xml-security.github.io/signxml/#signxml.XMLSigner
+    ET.register_namespace("ds", "http://www.w3.org/2000/09/xmldsig#")
+    ET.SubElement(root, "ds:Signature", {
+                  "xmlns:ds": "http://www.w3.org/2000/09/xmldsig#", "Id": "placeholder"})
+
+    signed_root = XMLSigner(signature_algorithm=cap_signature_method).sign(
+        root, key=key, cert=cert)
+
+    return lxml_ET.tostring(signed_root)
